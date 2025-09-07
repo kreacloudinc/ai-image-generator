@@ -1,0 +1,83 @@
+<!DOCTYPE h        <div class="page-content">
+            <h2>📷 Seleziona o Carica un'immagine</h2>
+            <p>Scegli un'immagine esistente o carica la tua per la generazione AI</p>
+            
+            <!-- Sezione toggle per scegliere modalità -->
+            <div class="mode-selector">
+                <button type="button" id="uploadModeBtn" class="mode-btn active">
+                    📤 Carica Nuova Immagine
+                </button>
+                <button type="button" id="selectModeBtn" class="mode-btn">
+                    🖼️ Scegli Immagine Esistente
+                </button>
+            </div>
+            
+            <!-- Sezione Upload (default) -->
+            <div id="uploadSection" class="input-section">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📸</div>
+                        <p>Clicca per selezionare un'immagine<br>
+                        <small>Formati supportati: JPG, PNG, GIF (max 5MB)</small></p>
+                        <input type="file" id="imageInput" name="image" accept="image/*">
+                    </div>
+                    
+                    <button type="submit" id="uploadBtn" disabled>
+                        📤 Carica Immagine
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Sezione Selezione immagini esistenti -->
+            <div id="selectSection" class="input-section hidden">
+                <div class="existing-images">
+                    <div class="images-grid" id="imagesGrid">
+                        <!-- Le immagini verranno caricate dinamicamente -->
+                    </div>
+                    <div class="no-images hidden" id="noImages">
+                        <p>📭 Nessuna immagine trovata nella cartella uploads</p>
+                        <p><small>Carica prima alcune immagini per poterle selezionare</small></p>
+                    </div>
+                </div>
+            </div>it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore Immagini AI - Upload</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Generatore Immagini AI</h1>
+        <div class="page-content">
+            <h2>📷 Carica la tua immagine</h2>
+            <p>Seleziona un'immagine da cui partire per la generazione AI</p>
+            
+            <!-- Form per upload immagine -->
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">�</div>
+                    <p>Clicca per selezionare un'immagine<br>
+                    <small>Formati supportati: JPG, PNG, GIF (max 10MB)</small></p>
+                    <input type="file" id="imageInput" name="image" accept="image/*" required>
+                </div>
+                
+                <button type="submit" id="uploadBtn" disabled>
+                    📤 Carica Immagine
+                </button>
+            </form>
+            
+            <!-- Loader durante upload -->
+            <div id="loader" class="loader hidden">
+                <div class="spinner"></div>
+                <p>Caricamento in corso...</p>
+            </div>
+            
+            <!-- Messaggio di errore -->
+            <div id="errorMessage" class="error-message hidden"></div>
+        </div>
+    </div>
+    
+    <script src="upload.js"></script>
+</body>
+</html>

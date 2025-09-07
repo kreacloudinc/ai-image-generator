@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore Immagini AI - Risultato</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Generatore Immagini AI</h1>
+        <div class="page-content">
+            <h2>🎨 Ecco il tuo risultato!</h2>
+            
+            <!-- Loader iniziale -->
+            <div id="initialLoader" class="loader">
+                <div class="spinner"></div>
+                <p>Caricamento risultati...</p>
+            </div>
+            
+            <!-- Contenuto principale -->
+            <div id="resultContent" class="result-content hidden">
+                
+                <!-- Sezione immagine originale -->
+                <div class="original-section">
+                    <h3>📷 Immagine Originale</h3>
+                    <img id="originalImage" src="" alt="Immagine originale" class="result-img">
+                </div>
+                
+                <!-- Dettagli del prompt -->
+                <div class="prompt-details">
+                    <h3>📝 Prompt utilizzato:</h3>
+                    <p id="usedPrompt" class="prompt-text"></p>
+                </div>
+                
+                <!-- Risultati AI -->
+                <div id="aiResults" class="ai-results">
+                    <!-- I risultati verranno inseriti dinamicamente qui -->
+                </div>
+                
+                <!-- Confronto costi -->
+                <div id="costComparison" class="cost-comparison hidden">
+                    <h3>� Confronto Costi e Performance</h3>
+                    <div class="comparison-table">
+                        <!-- Tabella comparativa generata dinamicamente -->
+                    </div>
+                </div>
+                            <span id="estimatedCost" class="stat-value">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">⏱️ Tempo di generazione:</span>
+                            <span id="generationTime" class="stat-value">~2-3 secondi</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">🎯 Tipo:</span>
+                            <span class="stat-value">Generazione AI (Mock)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Azioni -->
+                <div class="action-buttons">
+                    <button id="downloadBtn" class="btn btn-secondary hidden">
+                        💾 Scarica Immagine
+                    </button>
+                    <button id="restartBtn" class="btn btn-primary">
+                        🔄 Ricomincia
+                    </button>
+                    <button id="newPromptBtn" class="btn btn-secondary">
+                        ✏️ Nuovo Prompt
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Messaggio di errore -->
+            <div id="errorMessage" class="error-message hidden"></div>
+        </div>
+    </div>
+    
+    <script src="result.js"></script>
+</body>
+</html>

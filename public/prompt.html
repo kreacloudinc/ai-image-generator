@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore Immagini AI - Prompt</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Generatore Immagini AI</h1>
+            <p>Descrivi l'immagine che vuoi generare</p>
+        </header>
+
+        <main class="prompt-section">
+            <!-- Anteprima immagine originale -->
+            <div class="original-image-preview">
+                <h3>Immagine originale:</h3>
+                <img id="originalImage" src="" alt="Immagine originale" class="small-preview">
+            </div>
+
+            <!-- Sezione prompt -->
+            <div class="prompt-form">
+                <div class="form-group">
+                    <label for="promptText">Prompt descrittivo:</label>
+                    <textarea 
+                        id="promptText" 
+                        placeholder="Descrivi dettagliatamente l'immagine che vuoi generare. Ad esempio: 'Trasforma questa immagine in uno stile cartoon colorato con sfondo fantastico e luci magiche...'"
+                        rows="6"
+                        maxlength="500"
+                    ></textarea>
+                    <div class="char-counter">
+                        <span id="charCount">0</span>/500 caratteri
+                    </div>
+                </div>
+
+                <!-- Stima token e costo in tempo reale -->
+                <div class="estimation">
+                    <div class="estimation-item">
+                        <span class="label">Token stimati:</span>
+                        <span id="tokenEstimate">0</span>
+                    </div>
+                    <div class="estimation-item">
+                        <span class="label">Costo stimato:</span>
+                        <span id="costEstimate">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- Esempi di prompt -->
+                <details class="prompt-examples">
+                    <summary>💡 Prompt predefiniti di trasformazione</summary>
+                    <div class="examples-list">
+                        <button type="button" class="example-btn" data-prompt="Use the provided photo as the face without modifying facial features or expressions. Create a high-tech portrait titled 'The Racer'. The subject wears a futuristic blue racing suit with red accents, aerodynamic seams, and carbon fiber padding. He holds a racing helmet under one arm, designed with aggressive red stripes and black reflective visors. The background is an illuminated red racing pit, filled with neon panels, futuristic speed indicators, and dynamic diagonal light beams, suggesting motion and speed. Realistic and cinematic lighting.">
+                            🏎️ The Racer
+                        </button>
+                        <button type="button" class="example-btn" data-prompt="Use the provided photo as the face without altering facial features or expressions. Create a futuristic sci-fi portrait titled 'The Pilot'. The subject wears a highly detailed, red and black armored flight suit with metallic and carbon fiber textures, featuring tubes, connectors, and insignias. Add a sleek, high-tech helmet with integrated comms gear resting on the head, with illuminated red elements. The background is a vibrant red with holographic HUD-style circular graphics, light effects, and subtle glowing data streams. Lighting should emphasize depth, realism, and cinematic atmosphere.">
+                            ✈️ The Pilot
+                        </button>
+                        <button type="button" class="example-btn" data-prompt="Use the provided photo as the face without modifying facial features or expressions. Create a portrait titled 'The Futurist'. The subject wears a sleek, dark suit with glowing orange-red circuitry integrated into the fabric. Add transparent augmented reality glasses with subtle UI projections hovering around them. Background features a deep red holographic circuit board design, floating data patterns, and minimalistic digital interfaces. Clean, minimal yet highly technological atmosphere, with soft but vivid illumination.">
+                            🔮 The Futurist
+                        </button>
+                    </div>
+                </details>
+
+                <!-- Selezione Provider AI -->
+                <div class="provider-selection">
+                    <h4>🤖 Seleziona Provider AI:</h4>
+                    <div class="provider-options">
+                        <label class="provider-option">
+                            <input type="radio" name="provider" value="both" checked>
+                            <span class="provider-info">
+                                <strong>🔥 Entrambi (Confronto)</strong>
+                                <small>Gemini + OpenAI DALL-E - Migliore qualità</small>
+                            </span>
+                        </label>
+                        <label class="provider-option">
+                            <input type="radio" name="provider" value="openai">
+                            <span class="provider-info">
+                                <strong>🎨 OpenAI DALL-E 3</strong>
+                                <small>Genera immagini reali - $0.040 per immagine</small>
+                            </span>
+                        </label>
+                        <label class="provider-option">
+                            <input type="radio" name="provider" value="gemini">
+                            <span class="provider-info">
+                                <strong>🔮 Google Gemini</strong>
+                                <small>Analisi e descrizione - ~$0.001 per prompt</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="backBtn">
+                        ← Indietro
+                    </button>
+                    <button type="button" class="btn btn-primary" id="generateBtn" disabled>
+                        🎨 Genera Immagine
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sezione loading -->
+            <div class="loading-section" id="loadingSection" style="display: none;">
+                <div class="spinner"></div>
+                <p>Generazione in corso...</p>
+                <p class="loading-detail">Questo potrebbe richiedere alcuni secondi</p>
+            </div>
+
+            <!-- Sezione errore -->
+            <div class="error-section" id="errorSection" style="display: none;">
+                <div class="error-message" id="errorMessage"></div>
+                <button type="button" class="btn btn-secondary" id="retryBtn">
+                    Riprova
+                </button>
+            </div>
+        </main>
+
+        <!-- Loader nascosto per default -->
+        <div id="loader" class="loader hidden">
+            <div class="spinner"></div>
+            <p>Generazione in corso...</p>
+        </div>
+
+        <footer>
+            <p>Passaggio 3 di 4</p>
+        </footer>
+    </div>
+
+    <script src="prompt.js"></script>
+</body>
+</html>

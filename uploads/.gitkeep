@@ -1,0 +1,9 @@
+# Uploads Directory
+
+This directory stores uploaded images for AI processing.
+Files are automatically generated and managed by the application.
+
+## Note for developers:
+- This directory must exist for the application to work
+- Images are automatically stored here during upload
+- Content is excluded from git via .gitignore for privacy

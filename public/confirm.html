@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore Immagini AI - Conferma</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Generatore Immagini AI</h1>
+        <div class="page-content">
+            <h2>✅ Conferma la tua immagine</h2>
+            <p>Questa è l'immagine che hai caricato. Confermi di volerla usare?</p>
+            
+            <!-- Anteprima immagine -->
+            <div class="image-preview">
+                <img id="previewImage" src="" alt="Immagine caricata" class="preview-img">
+            </div>
+            
+            <!-- Pulsanti di azione -->
+            <div class="action-buttons">
+                <button id="retryBtn" class="btn btn-secondary">
+                    🔄 Riprova
+                </button>
+                <button id="acceptBtn" class="btn btn-primary">
+                    ✅ Accetta
+                </button>
+            </div>
+            
+            <!-- Messaggio di errore -->
+            <div id="errorMessage" class="error-message hidden"></div>
+        </div>
+    </div>
+    
+    <script src="confirm.js"></script>
+</body>
+</html>
