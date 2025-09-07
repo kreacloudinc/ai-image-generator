@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorMessage = document.getElementById('errorMessage');
 
     // Configurazioni
-    const MAX_CHARS = 500;
     const CHARS_PER_TOKEN = 4; // Approssimazione: 1 token ogni 4 caratteri
     const COST_PER_TOKEN = 0.00004; // $0.04 per 1000 token
 
@@ -24,24 +23,22 @@ document.addEventListener('DOMContentLoaded', function() {
     generateBtn.addEventListener('click', generateImage);
     backBtn.addEventListener('click', goBack);
     
-    // Gestione bottoni di esempio
-    setupExampleButtons();
+    // Gestione bottoni preset
+    setupPresetButtons();
 
-    function setupExampleButtons() {
-        const exampleButtons = document.querySelectorAll('.example-btn');
-        exampleButtons.forEach(button => {
+    function setupPresetButtons() {
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        presetButtons.forEach(button => {
             button.addEventListener('click', function() {
-                const examplePrompt = this.getAttribute('data-prompt');
-                if (examplePrompt) {
-                    promptText.value = examplePrompt;
-                    updateEstimates();
-                    checkFormValidity();
+                const presetPrompt = this.getAttribute('data-prompt');
+                if (presetPrompt) {
+                    promptText.value = presetPrompt;
                     
-                    // Chiudi il dettaglio se è aperto
-                    const details = document.querySelector('.prompt-examples');
-                    if (details) {
-                        details.open = false;
-                    }
+                    // Simula l'evento input per attivare tutti i controlli
+                    promptText.dispatchEvent(new Event('input', { bubbles: true }));
+                    
+                    // Focus sul campo per mostrare che è attivo
+                    promptText.focus();
                     
                     console.log('✅ Prompt predefinito selezionato:', this.textContent.trim());
                 }

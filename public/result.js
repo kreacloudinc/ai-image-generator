@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const aiResults = document.getElementById('aiResults');
     const costComparison = document.getElementById('costComparison');
     const restartBtn = document.getElementById('restartBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
     const newPromptBtn = document.getElementById('newPromptBtn');
     const errorMessage = document.getElementById('errorMessage');
 
@@ -17,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners
     restartBtn.addEventListener('click', restart);
     newPromptBtn.addEventListener('click', newPrompt);
-    downloadBtn.addEventListener('click', downloadImage);
 
     /**
      * Inizializza la pagina caricando i risultati
@@ -101,11 +99,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     type: result.openai.type,
                     time: result.openai.processingTime || 'N/A'
                 });
-            }
-            
-            // Mostra bottone download se c'è un'immagine generata
-            if (result.openai.generatedImageUrl) {
-                downloadBtn.classList.remove('hidden');
             }
         }
 
@@ -214,34 +207,6 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         costComparison.classList.remove('hidden');
-    }
-
-    /**
-     * Scarica l'immagine generata
-     */
-    async function downloadImage() {
-        try {
-            const sessionId = sessionStorage.getItem('sessionId');
-            const response = await fetch(`/api/result/${sessionId}`);
-            const data = await response.json();
-            
-            if (data.result && data.result.openai && data.result.openai.generatedImageUrl) {
-                // Crea un link temporaneo per il download
-                const link = document.createElement('a');
-                link.href = data.result.openai.generatedImageUrl;
-                link.download = `ai-generated-${Date.now()}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                console.log('✅ Download avviato');
-            } else {
-                throw new Error('Nessuna immagine generata disponibile per il download');
-            }
-        } catch (error) {
-            console.error('Errore download:', error);
-            showError('Errore durante il download: ' + error.message);
-        }
     }
 
     /**

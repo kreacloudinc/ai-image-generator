@@ -46,11 +46,29 @@ npm install
 Modifica il file \`server.js\` alle righe 12-17:
 
 \`\`\`javascript
-// Configurazione Google Gemini
-const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
+### 3. Configura le API Keys
+Crea un file `.env` dalla template:
 
-// Configurazione OpenAI  
-const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY';
+```bash
+cp .env.example .env
+```
+
+Modifica il file `.env` e aggiungi le tue chiavi API:
+
+```bash
+# Google Gemini AI API Key (obbligatoria)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# OpenAI API Key (opzionale - se non fornita, OpenAI sarà disabilitato)  
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Porta del server (opzionale, default: 3000)
+PORT=3000
+```
+
+**Come ottenere le chiavi API:**
+- **Gemini**: [Google AI Studio](https://makersuite.google.com/app/apikey)
+- **OpenAI**: [OpenAI Platform](https://platform.openai.com/api-keys)
 \`\`\`
 
 ### 4. Avvia l'applicazione

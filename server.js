@@ -6,25 +6,37 @@ const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const OpenAI = require('openai');
 
+// Carica variabili d'ambiente
+require('dotenv').config();
+
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Configurazione Gemini AI
-const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'; // Sostituisci con la tua chiave API
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+    console.error('❌ GEMINI_API_KEY non trovata nelle variabili d\'ambiente');
+    process.exit(1);
+}
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // Configurazione OpenAI
-const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY'; // Sostituisci con la tua chiave API
-const OPENAI_ENABLED = true; // Imposta false per disabilitare OpenAI
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_ENABLED = !!OPENAI_API_KEY; // Abilita solo se la chiave è presente
 const openai = OPENAI_ENABLED ? new OpenAI({
   apiKey: OPENAI_API_KEY
 }) : null;
+
+if (!OPENAI_ENABLED) {
+    console.warn('⚠️  OpenAI API Key non trovata - OpenAI disabilitato');
+}
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public')); // Serve file statici dalla cartella public
 app.use('/uploads', express.static('uploads')); // Serve immagini dalla cartella uploads
+app.use('/generated', express.static('generated')); // Serve immagini generate dalla cartella generated
 
 // Configurazione Multer per upload immagini
 const storage = multer.diskStorage({
@@ -122,6 +134,66 @@ app.get('/api/images', (req, res) => {
   } catch (error) {
     console.error('Errore nel listare immagini:', error);
     res.status(500).json({ error: 'Errore nel recuperare le immagini' });
+  }
+});
+
+// API: Elenca immagini generate dai modelli AI
+app.get('/api/generated-images', (req, res) => {
+  try {
+    const generatedDir = path.join(__dirname, 'generated');
+    
+    // Verifica che la cartella esista
+    if (!fs.existsSync(generatedDir)) {
+      return res.json({ images: [] });
+    }
+    
+    // Leggi il contenuto della cartella generated
+    const files = fs.readdirSync(generatedDir);
+    
+    // Filtra solo i file immagine
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+    const images = files.filter(file => {
+      const ext = path.extname(file).toLowerCase();
+      return imageExtensions.includes(ext) && !file.startsWith('.');
+    }).map(filename => {
+      const filePath = path.join(generatedDir, filename);
+      const stats = fs.statSync(filePath);
+      
+      // Determina il provider dal nome del file
+      let provider = 'unknown';
+      let providerIcon = '🤖';
+      let providerName = 'AI Generator';
+      
+      if (filename.startsWith('openai-')) {
+        provider = 'openai';
+        providerIcon = '🎨';
+        providerName = 'OpenAI DALL-E';
+      } else if (filename.startsWith('gemini-')) {
+        provider = 'gemini';
+        providerIcon = '🔮';
+        providerName = 'Google Gemini';
+      }
+      
+      return {
+        filename,
+        provider,
+        providerIcon,
+        providerName,
+        generatedDate: stats.mtime,
+        size: stats.size,
+        url: `/generated/${filename}`
+      };
+    });
+    
+    // Ordina per data di creazione (più recenti prima)
+    images.sort((a, b) => new Date(b.generatedDate) - new Date(a.generatedDate));
+    
+    console.log(`🎨 Trovate ${images.length} immagini generate`);
+    res.json({ images });
+    
+  } catch (error) {
+    console.error('Errore nel listare immagini generate:', error);
+    res.status(500).json({ error: 'Errore nel recuperare le immagini generate' });
   }
 });
 
@@ -312,6 +384,23 @@ Generate the image now.`;
               const generatedImageData = part.inlineData.data;
               const generatedImageUrl = `data:${part.inlineData.mimeType};base64,${generatedImageData}`;
               
+              // Salva l'immagine generata localmente
+              let savedImagePath = null;
+              try {
+                const timestamp = Date.now();
+                const randomId = Math.floor(Math.random() * 1000000000);
+                const extension = part.inlineData.mimeType === 'image/png' ? 'png' : 'jpg';
+                const filename = `gemini-${timestamp}-${randomId}.${extension}`;
+                const filepath = path.join(__dirname, 'generated', filename);
+                
+                const imageBuffer = Buffer.from(generatedImageData, 'base64');
+                fs.writeFileSync(filepath, imageBuffer);
+                savedImagePath = `/generated/${filename}`;
+                console.log('💾 Immagine Gemini salvata:', filename);
+              } catch (saveError) {
+                console.error('⚠️ Errore salvataggio immagine Gemini:', saveError.message);
+              }
+              
               // Calcola costi Gemini 2.5 Flash Image Preview
               const inputCost = 0.30; // $0.30 per input
               const outputCost = 0.039; // $0.039 per immagine output
@@ -324,6 +413,7 @@ Generate the image now.`;
                 success: true,
                 type: 'image',
                 generatedImageUrl: generatedImageUrl,
+                savedImagePath: savedImagePath, // Path locale dell'immagine salvata
                 originalImagePath: `/uploads/${originalImagePath}`,
                 prompt: prompt,
                 aiDescription: `Immagine generata con Gemini 2.5 Flash Image Preview: ${prompt}`,
@@ -439,6 +529,24 @@ async function generateWithOpenAI(prompt, originalImagePath) {
     
     const processingTime = Date.now() - startTime;
     
+    // Salva l'immagine generata localmente
+    let savedImagePath = null;
+    try {
+      const imageResponse = await fetch(response.data[0].url);
+      const arrayBuffer = await imageResponse.arrayBuffer();
+      const imageBuffer = Buffer.from(arrayBuffer);
+      const timestamp = Date.now();
+      const randomId = Math.floor(Math.random() * 1000000000);
+      const filename = `openai-${timestamp}-${randomId}.png`;
+      const filepath = path.join(__dirname, 'generated', filename);
+      
+      fs.writeFileSync(filepath, imageBuffer);
+      savedImagePath = `/generated/${filename}`;
+      console.log('💾 Immagine OpenAI salvata:', filename);
+    } catch (saveError) {
+      console.error('⚠️ Errore salvataggio immagine OpenAI:', saveError.message);
+    }
+    
     // Calcola costi OpenAI DALL-E 3
     const dallE3Cost = 0.040; // $0.04 per immagine 1024x1024 standard
     
@@ -449,6 +557,7 @@ async function generateWithOpenAI(prompt, originalImagePath) {
       success: true,
       type: 'image', // OpenAI genera immagine reale
       generatedImageUrl: response.data[0].url,
+      savedImagePath: savedImagePath, // Path locale dell'immagine salvata
       originalImagePath: `/uploads/${originalImagePath}`,
       prompt: prompt,
       optimizedPrompt: optimizedPrompt,

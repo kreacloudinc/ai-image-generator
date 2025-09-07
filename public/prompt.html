@@ -28,40 +28,39 @@
                         id="promptText" 
                         placeholder="Descrivi dettagliatamente l'immagine che vuoi generare. Ad esempio: 'Trasforma questa immagine in uno stile cartoon colorato con sfondo fantastico e luci magiche...'"
                         rows="6"
-                        maxlength="500"
                     ></textarea>
-                    <div class="char-counter">
-                        <span id="charCount">0</span>/500 caratteri
+                    
+                    <!-- Prompt predefiniti vicino al campo -->
+                    <div class="prompt-presets">
+                        <h4>💡 Prompt predefiniti:</h4>
+                        <div class="presets-grid">
+                            <button type="button" class="preset-btn" data-prompt="Use the provided photo as the face without modifying facial features or expressions. Create a high-tech portrait titled 'The Racer'. The subject wears a futuristic blue racing suit with red accents, aerodynamic seams, and carbon fiber padding. He holds a racing helmet under one arm, designed with aggressive red stripes and black reflective visors. The background is an illuminated red racing pit, filled with neon panels, futuristic speed indicators, and dynamic diagonal light beams, suggesting motion and speed. Realistic and cinematic lighting.">
+                                🏎️ The Racer
+                            </button>
+                            <button type="button" class="preset-btn" data-prompt="Use the provided photo as the face without altering facial features or expressions. Create a futuristic sci-fi portrait titled 'The Pilot'. The subject wears a highly detailed, red and black armored flight suit with metallic and carbon fiber textures, featuring tubes, connectors, and insignias. Add a sleek, high-tech helmet with integrated comms gear resting on the head, with illuminated red elements. The background is a vibrant red with holographic HUD-style circular graphics, light effects, and subtle glowing data streams. Lighting should emphasize depth, realism, and cinematic atmosphere.">
+                                ✈️ The Pilot
+                            </button>
+                            <button type="button" class="preset-btn" data-prompt="Use the provided photo as the face without modifying facial features or expressions. Create a portrait titled 'The Futurist'. The subject wears a sleek, dark suit with glowing orange-red circuitry integrated into the fabric. Add transparent augmented reality glasses with subtle UI projections hovering around them. Background features a deep red holographic circuit board design, floating data patterns, and minimalistic digital interfaces. Clean, minimal yet highly technological atmosphere, with soft but vivid illumination.">
+                                🔮 The Futurist
+                            </button>
+                            <button type="button" class="preset-btn" data-prompt="Use the provided photo as the face without modifying facial features or expressions. Create a portrait titled 'The Designer'. The subject holds a high-tech digital tablet with a glowing red holographic 3D interface. He wears a futuristic dark jacket with red-orange seams and illuminated emblem on the chest. The background is red with geometric digital grids, wireframes, and circuit-like structures. The overall mood is creative, futuristic, and elegant, with precise lighting to create depth and realism.">
+                                🎨 The Designer
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Contatori -->
+                    <div class="prompt-counters">
+                        <div class="counter-item">
+                            <span class="label">Caratteri:</span>
+                            <span id="charCount">0</span>
+                        </div>
+                        <div class="counter-item">
+                            <span class="label">Token stimati:</span>
+                            <span id="tokenCount">0</span>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Stima token e costo in tempo reale -->
-                <div class="estimation">
-                    <div class="estimation-item">
-                        <span class="label">Token stimati:</span>
-                        <span id="tokenEstimate">0</span>
-                    </div>
-                    <div class="estimation-item">
-                        <span class="label">Costo stimato:</span>
-                        <span id="costEstimate">$0.00</span>
-                    </div>
-                </div>
-
-                <!-- Esempi di prompt -->
-                <details class="prompt-examples">
-                    <summary>💡 Prompt predefiniti di trasformazione</summary>
-                    <div class="examples-list">
-                        <button type="button" class="example-btn" data-prompt="Use the provided photo as the face without modifying facial features or expressions. Create a high-tech portrait titled 'The Racer'. The subject wears a futuristic blue racing suit with red accents, aerodynamic seams, and carbon fiber padding. He holds a racing helmet under one arm, designed with aggressive red stripes and black reflective visors. The background is an illuminated red racing pit, filled with neon panels, futuristic speed indicators, and dynamic diagonal light beams, suggesting motion and speed. Realistic and cinematic lighting.">
-                            🏎️ The Racer
-                        </button>
-                        <button type="button" class="example-btn" data-prompt="Use the provided photo as the face without altering facial features or expressions. Create a futuristic sci-fi portrait titled 'The Pilot'. The subject wears a highly detailed, red and black armored flight suit with metallic and carbon fiber textures, featuring tubes, connectors, and insignias. Add a sleek, high-tech helmet with integrated comms gear resting on the head, with illuminated red elements. The background is a vibrant red with holographic HUD-style circular graphics, light effects, and subtle glowing data streams. Lighting should emphasize depth, realism, and cinematic atmosphere.">
-                            ✈️ The Pilot
-                        </button>
-                        <button type="button" class="example-btn" data-prompt="Use the provided photo as the face without modifying facial features or expressions. Create a portrait titled 'The Futurist'. The subject wears a sleek, dark suit with glowing orange-red circuitry integrated into the fabric. Add transparent augmented reality glasses with subtle UI projections hovering around them. Background features a deep red holographic circuit board design, floating data patterns, and minimalistic digital interfaces. Clean, minimal yet highly technological atmosphere, with soft but vivid illumination.">
-                            🔮 The Futurist
-                        </button>
-                    </div>
-                </details>
 
                 <!-- Selezione Provider AI -->
                 <div class="provider-selection">
