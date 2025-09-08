@@ -1,6 +1,7 @@
 // Script per gestire la pagina dei risultati con confronto AI
 document.addEventListener('DOMContentLoaded', function() {
-    const initialLoader = document.getElementById('initialLoader');
+    const initialLoader = docum        const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E 3 HD' : 
+                            provider === 'stability' ? '⚡ Stability AI SDXL' : '🔮 Google Gemini 2.5';.getElementById('initialLoader');
     const resultContent = document.getElementById('resultContent');
     const originalImage = document.getElementById('originalImage');
     const usedPrompt = document.getElementById('usedPrompt');
@@ -86,22 +87,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Mostra risultati Imagen 4 Fast
-        if (result.imagen4) {
-            hasResults = true;
-            const imagen4Card = createResultCard('imagen4', result.imagen4);
-            aiResults.appendChild(imagen4Card);
-            
-            if (result.imagen4.cost) {
-                costs.push({
-                    provider: 'Gemini 1.5 Pro Vision',
-                    cost: result.imagen4.cost.total,
-                    type: result.imagen4.type,
-                    time: result.imagen4.processingTime || 'N/A'
-                });
-            }
-        }
-
         // Mostra risultati OpenAI
         if (result.openai) {
             hasResults = true;
@@ -153,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.error) {
             const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E' : 
                                 provider === 'stability' ? '⚡ Stability AI' : 
-                                provider === 'imagen4' ? '🚀 Imagen 4 Fast' : '🔮 Google Gemini';
+                                provider === 'imagen3' ? '🚀 Imagen 3' : '🔮 Google Gemini';
             card.innerHTML = `
                 <div class="ai-result-header">
                     <div class="ai-provider ${provider}">
@@ -168,8 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E 3 HD' : 
-                            provider === 'stability' ? '⚡ Stability AI SDXL' : 
-                            provider === 'imagen4' ? '🚀 Google Imagen 4 Fast' : '🔮 Google Gemini 2.5';
+                            provider === 'stability' ? '⚡ Stability AI SDXL' : '🔮 Google Gemini 2.5';
         const costDisplay = data.cost ? `$${data.cost.total}` : 'N/A';
 
         card.innerHTML = `

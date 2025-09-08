@@ -39,6 +39,14 @@ if (!STABILITY_ENABLED) {
     console.warn('⚠️  Stability API Key non trovata - Stability AI disabilitato');
 }
 
+// Configurazione ComfyUI
+const COMFYUI_URL = process.env.COMFYUI_URL || 'http://127.0.0.1:8188';
+const COMFYUI_ENABLED = true; // ComfyUI locale sempre abilitato se accessibile
+
+if (COMFYUI_ENABLED) {
+    console.log('🎨 ComfyUI configurato su:', COMFYUI_URL);
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -309,16 +317,7 @@ app.post('/api/generate', async (req, res) => {
       }
     }
 
-    // Genera con Google Imagen 4 Fast (se richiesto)
-    if (provider === 'imagen4' || provider === 'both') {
-      console.log('🚀 Generando con Google Imagen 4 Fast...');
-      try {
-        results.imagen4 = await generateWithImagen4(prompt);
-      } catch (error) {
-        console.error('❌ Errore Imagen 4:', error.message);
-        results.imagen4 = { error: error.message };
-      }
-    }
+
     
     // Salva il risultato nella sessione
     sessionData[sessionId].result = results;
@@ -706,120 +705,7 @@ async function generateWithStabilityAI(prompt) {
   }
 }
 
-/**
- * Genera immagine usando Google Imagen 4 Fast
- */
-async function generateWithImagen4(prompt) {
-  try {
-    console.log('🚀 Generazione immagine con Google Imagen 4 Fast...');
-    console.log('🔑 API Key disponibile:', GEMINI_API_KEY ? 'SÌ' : 'NO');
-    
-    const startTime = Date.now();
-    
-    // Prova con l'API Gemini (dalla documentazione ufficiale)
-    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:generateImages';
-    
-    const requestData = {
-      prompt: prompt,
-      config: {
-        numberOfImages: 1,
-        aspectRatio: '1:1',
-        sampleImageSize: '1K'
-      }
-    };
-    
-    console.log('🌐 Chiamata API Imagen 4 a:', apiUrl);
-    console.log('📦 Dati richiesta:', JSON.stringify(requestData, null, 2));
-    
-    const response = await axios.post(apiUrl, requestData, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GEMINI_API_KEY}`
-      },
-      timeout: 120000 // 2 minuti di timeout
-    });
 
-    const processingTime = Date.now() - startTime;
-    console.log('✅ Risposta ricevuta da Imagen 4:', response.status);
-    
-    if (response.data && response.data.generatedImages && response.data.generatedImages.length > 0) {
-      const generatedImage = response.data.generatedImages[0];
-      
-      // L'immagine dovrebbe essere in formato base64
-      const imageBase64 = generatedImage.bytesBase64Encoded;
-      const generatedImageUrl = `data:image/png;base64,${imageBase64}`;
-      
-      // Salva l'immagine generata localmente
-      let savedImagePath = null;
-      try {
-        const timestamp = Date.now();
-        const randomId = Math.floor(Math.random() * 1000000000);
-        const filename = `imagen4-${timestamp}-${randomId}.png`;
-        const filepath = path.join(__dirname, 'generated', filename);
-        
-        const imageBuffer = Buffer.from(imageBase64, 'base64');
-        fs.writeFileSync(filepath, imageBuffer);
-        savedImagePath = `/generated/${filename}`;
-        console.log('💾 Immagine Imagen 4 salvata:', filename);
-      } catch (saveError) {
-        console.error('⚠️ Errore salvataggio immagine Imagen 4:', saveError.message);
-      }
-      
-      // Calcola costi per Imagen 4 Fast ($0.02 per immagine)
-      const outputCost = 0.02;
-      
-      console.log('✅ Generazione Imagen 4 Fast completata');
-      
-      return {
-        provider: 'imagen4',
-        success: true,
-        type: 'image',
-        generatedImageUrl: generatedImageUrl,
-        savedImagePath: savedImagePath,
-        imageUrl: savedImagePath,
-        filename: savedImagePath ? savedImagePath.split('/').pop() : null,
-        prompt: prompt,
-        aiDescription: `Immagine generata con Google Imagen 4 Fast. Risoluzione: 1024x1024px, Aspect Ratio: 1:1. Modello ottimizzato per velocità di generazione con costi ridotti e qualità elevata. Imagen 4 offre generazione rapida con eccellente aderenza al prompt.`,
-        cost: {
-          input: '0.000',
-          output: outputCost.toFixed(3),
-          total: outputCost.toFixed(3),
-          currency: 'USD',
-          breakdown: 'Solo costi di output per Imagen 4 Fast'
-        },
-        generatedAt: new Date().toISOString(),
-        processingTime: `${processingTime}ms`,
-        imageSpecs: {
-          model: "imagen-4.0-fast-generate-001",
-          type: "text-to-image",
-          quality: "fast",
-          resolution: "1024x1024",
-          provider: "Google AI (Imagen 4)"
-        }
-      };
-    } else {
-      throw new Error('Nessuna immagine generata da Imagen 4 - risposta vuota');
-    }
-    
-  } catch (error) {
-    console.error('❌ Errore generale Imagen 4:', error.message);
-    
-    // Gestisci errori specifici di Imagen 4
-    if (error.response?.status === 404) {
-      throw new Error('Modello Imagen 4 Fast non disponibile nell\'API Google AI. Il servizio potrebbe essere in anteprima limitata o richiede accesso speciale.');
-    } else if (error.response?.status === 401) {
-      throw new Error('Chiave API Google non autorizzata per Imagen 4. Verifica la chiave nel file .env');
-    } else if (error.response?.status === 429) {
-      throw new Error('Limite rate raggiunto per Imagen 4. Riprova più tardi.');
-    } else if (error.response?.status === 400) {
-      throw new Error(`Richiesta non valida per Imagen 4: ${error.response?.data?.error?.message || 'Parametri non validi'}`);
-    } else if (error.response?.status === 403) {
-      throw new Error('Accesso negato a Imagen 4. Il modello potrebbe richiedere accesso speciale o non essere disponibile nella tua regione.');
-    } else {
-      throw new Error(`Imagen 4: ${error.response?.data?.error?.message || error.message}`);
-    }
-  }
-}
 
 // Gestione errori Multer
 app.use((error, req, res, next) => {
@@ -847,12 +733,11 @@ app.listen(PORT, () => {
   console.log('   GET  /api/images - Elenca immagini esistenti');
   console.log('   POST /api/select-image - Seleziona immagine esistente');
   console.log('   GET  /api/image/:sessionId - Ottieni dati immagine');
-  console.log('      POST /api/generate - Genera immagine da prompt (Gemini + OpenAI + Stability + Imagen 4)');
+  console.log('      POST /api/generate - Genera immagine da prompt (Gemini + OpenAI + Stability)');
   console.log('   GET  /api/result/:sessionId - Ottieni risultato');
   console.log('   DELETE /api/session/:sessionId - Reset sessione');
   console.log('\n🤖 AI Providers:');
   console.log('   🔮 Gemini 2.5 Flash Image Preview - Generazione immagini AI');
   console.log('   🎨 OpenAI DALL-E 3 - Generazione immagini');
   console.log('   ⚡ Stability AI Stable Diffusion XL - Generazione immagini di alta qualità');
-  console.log('   🚀 Google Imagen 4 Fast - Generazione veloce e economica');
 });

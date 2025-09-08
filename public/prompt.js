@@ -133,8 +133,6 @@ document.addEventListener('DOMContentLoaded', function() {
             loaderText.textContent = 'Generazione con OpenAI DALL-E in corso...';
         } else if (selectedProvider === 'stability') {
             loaderText.textContent = 'Generazione con Stability AI in corso...';
-        } else if (selectedProvider === 'imagen4') {
-            loaderText.textContent = 'Analisi veloce con Gemini 1.5 Pro Vision in corso...';
         } else if (selectedProvider === 'gemini') {
             loaderText.textContent = 'Analisi con Gemini in corso...';
         } else {
