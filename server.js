@@ -5,6 +5,7 @@ const fs = require('fs');
 const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const OpenAI = require('openai');
+const Anthropic = require('@anthropic-ai/sdk');
 
 // Carica variabili d'ambiente
 require('dotenv').config();
@@ -29,6 +30,17 @@ const openai = OPENAI_ENABLED ? new OpenAI({
 
 if (!OPENAI_ENABLED) {
     console.warn('⚠️  OpenAI API Key non trovata - OpenAI disabilitato');
+}
+
+// Configurazione Claude (Anthropic)
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const CLAUDE_ENABLED = !!ANTHROPIC_API_KEY; // Abilita solo se la chiave è presente
+const anthropic = CLAUDE_ENABLED ? new Anthropic({
+  apiKey: ANTHROPIC_API_KEY
+}) : null;
+
+if (!CLAUDE_ENABLED) {
+    console.warn('⚠️  Anthropic API Key non trovata - Claude disabilitato');
 }
 
 // Middleware
@@ -286,6 +298,17 @@ app.post('/api/generate', async (req, res) => {
       } catch (error) {
         console.error('❌ Errore OpenAI:', error.message);
         results.openai = { error: error.message };
+      }
+    }
+
+    // Analizza con Claude Vision (se richiesto)
+    if (provider === 'claude' || provider === 'both') {
+      console.log('👁️ Analizzando con Claude Vision...');
+      try {
+        results.claude = await analyzeWithClaude(prompt, sessionData[sessionId].imagePath);
+      } catch (error) {
+        console.error('❌ Errore Claude:', error.message);
+        results.claude = { error: error.message };
       }
     }
     
@@ -596,6 +619,86 @@ async function generateWithOpenAI(prompt, originalImagePath) {
   }
 }
 
+// Funzione per analizzare immagine con Claude Vision
+async function analyzeWithClaude(prompt, originalImagePath) {
+  if (!CLAUDE_ENABLED) {
+    throw new Error('Claude non è configurato - API key mancante');
+  }
+
+  const startTime = Date.now();
+  
+  try {
+    console.log('👁️ Analisi con Claude Vision...');
+    
+    // Leggi l'immagine e convertila in base64
+    const imagePath = path.join(__dirname, 'uploads', originalImagePath);
+    const imageBuffer = fs.readFileSync(imagePath);
+    const base64Image = imageBuffer.toString('base64');
+    
+    // Determina il tipo mime
+    const mimeType = originalImagePath.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+    
+    // Analizza l'immagine con Claude
+    console.log('🔍 Invio richiesta a Claude...');
+    const response = await anthropic.messages.create({
+      model: "claude-3-5-sonnet-20241022",
+      max_tokens: 1024,
+      messages: [{
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: mimeType,
+              data: base64Image
+            }
+          },
+          {
+            type: "text",
+            text: `Analizza questa immagine e fornisci una descrizione dettagliata. Poi, considerando questo prompt: "${prompt}", fornisci suggerimenti per migliorare la generazione di immagini AI basate su questa foto. Includi dettagli su:
+            
+1. Descrizione visiva dettagliata
+2. Elementi di stile e composizione
+3. Suggerimenti per prompt migliorati
+4. Aspetti tecnici da considerare
+
+Rispondi in italiano con un formato strutturato.`
+          }
+        ]
+      }]
+    });
+
+    const processingTime = Date.now() - startTime;
+    console.log(`✅ Analisi Claude completata in ${processingTime}ms`);
+
+    return {
+      success: true,
+      analysis: response.content[0].text,
+      processingTime: `${processingTime}ms`,
+      modelUsed: "claude-3-5-sonnet-20241022",
+      usage: {
+        input_tokens: response.usage.input_tokens,
+        output_tokens: response.usage.output_tokens
+      }
+    };
+    
+  } catch (error) {
+    console.error('❌ Errore Claude:', error.message);
+    
+    // Gestisci diversi tipi di errore Claude
+    if (error.status === 401) {
+      throw new Error('Chiave API Claude non valida.');
+    } else if (error.status === 429) {
+      throw new Error('Limite rate Claude raggiunto. Riprova più tardi.');
+    } else if (error.status === 400) {
+      throw new Error('Richiesta non valida per Claude Vision.');
+    } else {
+      throw new Error(`Claude Vision: ${error.message}`);
+    }
+  }
+}
+
 // Gestione errori Multer
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
@@ -622,10 +725,11 @@ app.listen(PORT, () => {
   console.log('   GET  /api/images - Elenca immagini esistenti');
   console.log('   POST /api/select-image - Seleziona immagine esistente');
   console.log('   GET  /api/image/:sessionId - Ottieni dati immagine');
-  console.log('   POST /api/generate - Genera immagine da prompt (Gemini + OpenAI)');
+  console.log('   POST /api/generate - Genera immagine da prompt (Gemini + OpenAI + Claude)');
   console.log('   GET  /api/result/:sessionId - Ottieni risultato');
   console.log('   DELETE /api/session/:sessionId - Reset sessione');
   console.log('\n🤖 AI Providers:');
   console.log('   🔮 Gemini 2.5 Flash Image Preview - Generazione immagini AI');
   console.log('   🎨 OpenAI DALL-E 3 - Generazione immagini');
+  console.log('   👁️ Claude 3.5 Sonnet - Analisi e descrizione immagini');
 });

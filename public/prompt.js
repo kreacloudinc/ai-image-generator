@@ -127,9 +127,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Aggiorna il messaggio del loader in base al provider
         const loaderText = document.querySelector('#loader p');
         if (selectedProvider === 'both') {
-            loaderText.textContent = 'Generazione con Gemini + OpenAI in corso...';
+            loaderText.textContent = 'Generazione con Gemini + OpenAI + Claude in corso...';
         } else if (selectedProvider === 'openai') {
             loaderText.textContent = 'Generazione con OpenAI DALL-E in corso...';
+        } else if (selectedProvider === 'claude') {
+            loaderText.textContent = 'Analisi con Claude Vision in corso...';
         } else {
             loaderText.textContent = 'Analisi con Gemini in corso...';
         }

@@ -102,6 +102,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // Mostra risultati Claude
+        if (result.claude) {
+            hasResults = true;
+            const claudeCard = createResultCard('claude', result.claude);
+            aiResults.appendChild(claudeCard);
+            
+            // Calcola costi stimati per Claude (non forniti dall'API)
+            if (result.claude.usage) {
+                const estimatedCost = (result.claude.usage.input_tokens * 0.003 + result.claude.usage.output_tokens * 0.015) / 1000;
+                costs.push({
+                    provider: 'Claude Vision',
+                    cost: estimatedCost.toFixed(4),
+                    type: 'Analisi visiva',
+                    time: result.claude.processingTime || 'N/A'
+                });
+            }
+        }
+
         // Mostra confronto costi se ci sono più provider
         if (costs.length > 1) {
             displayCostComparison(costs);
@@ -120,10 +138,12 @@ document.addEventListener('DOMContentLoaded', function() {
         card.className = `ai-result-card ${provider}`;
 
         if (data.error) {
+            const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E' : 
+                                provider === 'claude' ? '👁️ Claude Vision' : '🔮 Google Gemini';
             card.innerHTML = `
                 <div class="ai-result-header">
                     <div class="ai-provider ${provider}">
-                        ${provider === 'openai' ? '🎨 OpenAI DALL-E' : '🔮 Google Gemini'}
+                        ${providerName}
                     </div>
                 </div>
                 <div class="ai-error">
@@ -133,7 +153,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return card;
         }
 
-        const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E 3' : '🔮 Google Gemini';
+        const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E 3' : 
+                            provider === 'claude' ? '👁️ Claude Vision' : '🔮 Google Gemini';
         const costDisplay = data.cost ? `$${data.cost.total}` : 'N/A';
 
         card.innerHTML = `
@@ -149,9 +170,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 ` : ''}
                 <div class="ai-description-section">
-                    <h4>${data.type === 'image' ? '📝 Dettagli' : '🧠 Analisi AI'}</h4>
+                    <h4>${data.type === 'image' ? '📝 Dettagli' : provider === 'claude' ? '🔍 Analisi Visiva Claude' : '🧠 Analisi AI'}</h4>
                     <div class="ai-description-text">
-                        ${data.aiDescription || 'Nessuna descrizione disponibile'}
+                        ${provider === 'claude' ? data.analysis || 'Nessuna analisi disponibile' : data.aiDescription || 'Nessuna descrizione disponibile'}
                     </div>
                     ${createSpecsSection(data)}
                 </div>
@@ -171,8 +192,18 @@ document.addEventListener('DOMContentLoaded', function() {
             specs += `<div class="spec-item"><span>🔤 Token:</span><span>${data.tokens.total}</span></div>`;
         }
         
+        // Gestione usage specifico per Claude
+        if (data.usage && data.usage.input_tokens) {
+            specs += `<div class="spec-item"><span>📥 Token Input:</span><span>${data.usage.input_tokens}</span></div>`;
+            specs += `<div class="spec-item"><span>📤 Token Output:</span><span>${data.usage.output_tokens}</span></div>`;
+        }
+        
         if (data.processingTime) {
             specs += `<div class="spec-item"><span>⏱️ Tempo:</span><span>${data.processingTime}</span></div>`;
+        }
+        
+        if (data.modelUsed) {
+            specs += `<div class="spec-item"><span>🤖 Modello:</span><span>${data.modelUsed}</span></div>`;
         }
         
         if (data.imageSpecs) {

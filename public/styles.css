@@ -374,6 +374,14 @@ h1 {
     border-color: #3367d6;
 }
 
+.generated-item.claude {
+    border-color: #cc785c;
+}
+
+.generated-item.claude:hover {
+    border-color: #b8684b;
+}
+
 .generated-image {
     width: 100%;
     height: 150px;
@@ -403,6 +411,10 @@ h1 {
 
 .generated-info .provider.gemini {
     color: #4285f4;
+}
+
+.generated-info .provider.claude {
+    color: #cc785c;
 }
 
 .generated-info .filename {
@@ -738,6 +750,10 @@ h1 {
     border-color: #4285f4;
 }
 
+.ai-result-card.claude {
+    border-color: #cc785c;
+}
+
 .ai-result-header {
     display: flex;
     align-items: center;
@@ -759,6 +775,10 @@ h1 {
 
 .ai-provider.gemini {
     color: #4285f4;
+}
+
+.ai-provider.claude {
+    color: #cc785c;
 }
 
 .ai-cost {
