@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const originalImage = document.getElementById('originalImage');
     const promptText = document.getElementById('promptText');
+    const negativePrompt = document.getElementById('negativePrompt');
     const charCount = document.getElementById('charCount');
     const estimatedTokens = document.getElementById('estimatedTokens');
     const estimatedCost = document.getElementById('estimatedCost');
@@ -127,13 +128,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Aggiorna il messaggio del loader in base al provider
         const loaderText = document.querySelector('#loader p');
         if (selectedProvider === 'both') {
-            loaderText.textContent = 'Generazione con Gemini + OpenAI + Claude in corso...';
+            loaderText.textContent = 'Generazione con tutti i modelli AI in corso...';
         } else if (selectedProvider === 'openai') {
             loaderText.textContent = 'Generazione con OpenAI DALL-E in corso...';
-        } else if (selectedProvider === 'claude') {
-            loaderText.textContent = 'Analisi con Claude Vision in corso...';
-        } else {
+        } else if (selectedProvider === 'stability') {
+            loaderText.textContent = 'Generazione con Stability AI in corso...';
+        } else if (selectedProvider === 'imagen4') {
+            loaderText.textContent = 'Analisi veloce con Gemini 1.5 Pro Vision in corso...';
+        } else if (selectedProvider === 'gemini') {
             loaderText.textContent = 'Analisi con Gemini in corso...';
+        } else {
+            loaderText.textContent = 'Generazione AI in corso...';
         }
 
         try {
@@ -145,6 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({
                     sessionId: sessionId,
                     prompt: prompt,
+                    negativePrompt: negativePrompt.value.trim(),
                     provider: selectedProvider
                 })
             });

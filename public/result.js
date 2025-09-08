@@ -86,6 +86,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // Mostra risultati Imagen 4 Fast
+        if (result.imagen4) {
+            hasResults = true;
+            const imagen4Card = createResultCard('imagen4', result.imagen4);
+            aiResults.appendChild(imagen4Card);
+            
+            if (result.imagen4.cost) {
+                costs.push({
+                    provider: 'Gemini 1.5 Pro Vision',
+                    cost: result.imagen4.cost.total,
+                    type: result.imagen4.type,
+                    time: result.imagen4.processingTime || 'N/A'
+                });
+            }
+        }
+
         // Mostra risultati OpenAI
         if (result.openai) {
             hasResults = true;
@@ -102,22 +118,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Mostra risultati Claude
-        if (result.claude) {
+        // Mostra risultati Stability AI
+        if (result.stability) {
             hasResults = true;
-            const claudeCard = createResultCard('claude', result.claude);
-            aiResults.appendChild(claudeCard);
+            const stabilityCard = createResultCard('stability', result.stability);
+            aiResults.appendChild(stabilityCard);
             
-            // Calcola costi stimati per Claude (non forniti dall'API)
-            if (result.claude.usage) {
-                const estimatedCost = (result.claude.usage.input_tokens * 0.003 + result.claude.usage.output_tokens * 0.015) / 1000;
-                costs.push({
-                    provider: 'Claude Vision',
-                    cost: estimatedCost.toFixed(4),
-                    type: 'Analisi visiva',
-                    time: result.claude.processingTime || 'N/A'
-                });
-            }
+            // Calcola costi stimati per Stability AI
+            costs.push({
+                provider: 'Stability AI',
+                cost: '0.020',
+                type: 'Generazione immagine',
+                time: result.stability.processingTime || 'N/A'
+            });
         }
 
         // Mostra confronto costi se ci sono più provider
@@ -139,7 +152,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (data.error) {
             const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E' : 
-                                provider === 'claude' ? '👁️ Claude Vision' : '🔮 Google Gemini';
+                                provider === 'stability' ? '⚡ Stability AI' : 
+                                provider === 'imagen4' ? '🚀 Imagen 4 Fast' : '🔮 Google Gemini';
             card.innerHTML = `
                 <div class="ai-result-header">
                     <div class="ai-provider ${provider}">
@@ -153,8 +167,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return card;
         }
 
-        const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E 3' : 
-                            provider === 'claude' ? '👁️ Claude Vision' : '🔮 Google Gemini';
+        const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E 3 HD' : 
+                            provider === 'stability' ? '⚡ Stability AI SDXL' : 
+                            provider === 'imagen4' ? '🚀 Google Imagen 4 Fast' : '🔮 Google Gemini 2.5';
         const costDisplay = data.cost ? `$${data.cost.total}` : 'N/A';
 
         card.innerHTML = `
@@ -170,9 +185,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 ` : ''}
                 <div class="ai-description-section">
-                    <h4>${data.type === 'image' ? '📝 Dettagli' : provider === 'claude' ? '🔍 Analisi Visiva Claude' : '🧠 Analisi AI'}</h4>
+                    <h4>${data.type === 'image' ? '📝 Dettagli' : '🧠 Analisi AI'}</h4>
                     <div class="ai-description-text">
-                        ${provider === 'claude' ? data.analysis || 'Nessuna analisi disponibile' : data.aiDescription || 'Nessuna descrizione disponibile'}
+                        ${data.aiDescription || 'Nessuna descrizione disponibile'}
                     </div>
                     ${createSpecsSection(data)}
                 </div>
@@ -190,12 +205,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (data.tokens && data.tokens.total) {
             specs += `<div class="spec-item"><span>🔤 Token:</span><span>${data.tokens.total}</span></div>`;
-        }
-        
-        // Gestione usage specifico per Claude
-        if (data.usage && data.usage.input_tokens) {
-            specs += `<div class="spec-item"><span>📥 Token Input:</span><span>${data.usage.input_tokens}</span></div>`;
-            specs += `<div class="spec-item"><span>📤 Token Output:</span><span>${data.usage.output_tokens}</span></div>`;
         }
         
         if (data.processingTime) {

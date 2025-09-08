@@ -374,12 +374,12 @@ h1 {
     border-color: #3367d6;
 }
 
-.generated-item.claude {
-    border-color: #cc785c;
+.generated-item.stability {
+    border-color: #ff6b35;
 }
 
-.generated-item.claude:hover {
-    border-color: #b8684b;
+.generated-item.stability:hover {
+    border-color: #e55a2e;
 }
 
 .generated-image {
@@ -413,8 +413,8 @@ h1 {
     color: #4285f4;
 }
 
-.generated-info .provider.claude {
-    color: #cc785c;
+.generated-info .provider.stability {
+    color: #ff6b35;
 }
 
 .generated-info .filename {
@@ -546,6 +546,42 @@ h1 {
     padding: 1rem;
     background: #f8f9ff;
     border-radius: 10px;
+}
+
+/* Negative Prompt Section */
+.negative-prompt-section {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #fef7f7;
+    border: 1px solid #fdd8d8;
+    border-radius: 10px;
+}
+
+.negative-prompt-section .form-group {
+    margin-bottom: 0.5rem;
+}
+
+.negative-prompt-section label {
+    color: #d63384;
+    font-weight: 600;
+}
+
+.negative-prompt-section textarea {
+    border-color: #fdd8d8;
+    background: #fff;
+}
+
+.negative-prompt-section textarea:focus {
+    border-color: #d63384;
+    box-shadow: 0 0 0 0.2rem rgba(214, 51, 132, 0.25);
+}
+
+.negative-prompt-note {
+    display: block;
+    margin-top: 0.5rem;
+    color: #d63384;
+    font-size: 0.85rem;
+    font-style: italic;
 }
 
 .estimation-item {
@@ -750,8 +786,8 @@ h1 {
     border-color: #4285f4;
 }
 
-.ai-result-card.claude {
-    border-color: #cc785c;
+.ai-result-card.stability {
+    border-color: #ff6b35;
 }
 
 .ai-result-header {
@@ -777,8 +813,8 @@ h1 {
     color: #4285f4;
 }
 
-.ai-provider.claude {
-    color: #cc785c;
+.ai-provider.stability {
+    color: #ff6b35;
 }
 
 .ai-cost {

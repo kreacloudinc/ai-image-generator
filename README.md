@@ -1,16 +1,20 @@
 # 🚀 AI Image Generator
 
-Un'applicazione web completa per la generazione di immagini AI che utilizza **Gemini 2.5 Flash Image Preview**, **OpenAI DALL-E 3** e **Claude Vision** per trasformare le tue foto in capolavori artistici.
+Un'applicazione web completa per la generazione di immagini AI che util### 2. **Selezione Provider**
+- 🔮 **Solo Gemini**: Usa Gemini 2.5 Flash Image Preview
+- 🎨 **Solo OpenAI**: Usa DALL-E 3  
+- ⚡ **Solo Stability AI**: Usa Stable Diffusion per immagini dettagliate
+- 🔄 **Tutti**: Confronta i risultati di tutti i provider**Gemini 2.5 Flash Image Preview**, **OpenAI DALL-E 3** e **Stability AI** per trasformare le tue foto in capolavori artistici.
 
 ## ✨ Caratteristiche principali
 
-- 🎨 **Triple AI Provider**: Confronta risultati tra Gemini, OpenAI e Claude
+- 🎨 **Triple AI Provider**: Confronta risultati tra Gemini, OpenAI e Stability AI
 - 📸 **Upload flessibile**: Carica nuove immagini o scegli da quelle esistenti  
 - 🎯 **Prompt predefiniti**: 3 stili professionali pronti all'uso
 - 💰 **Analisi costi**: Confronto dettagliato dei costi per provider
 - ⚡ **Interfaccia moderna**: Design responsive e user-friendly
 - 🔄 **Risultati in tempo reale**: Generazione simultanea con tutti i provider
-- 👁️ **Analisi visiva**: Claude Vision per descrizioni dettagliate
+- 🎨 **Stable Diffusion**: Generazione di immagini ad alta qualità
 
 ## 🛠️ Tecnologie utilizzate
 
@@ -18,7 +22,7 @@ Un'applicazione web completa per la generazione di immagini AI che utilizza **Ge
 - **Node.js** + **Express.js**
 - **Google Generative AI** (Gemini 2.5 Flash Image Preview)
 - **OpenAI API** (DALL-E 3)
-- **Anthropic Claude** (Vision 3.5 Sonnet)
+- **Stability AI** (Stable Diffusion v1.6)
 - **Multer** per gestione upload file
 
 ### Frontend  
@@ -32,7 +36,7 @@ Un'applicazione web completa per la generazione di immagini AI che utilizza **Ge
 - Node.js (v14 o superiore)
 - Chiave API Google Gemini
 - Chiave API OpenAI (opzionale)
-- Chiave API Anthropic Claude (opzionale)
+- Chiave API Stability AI (opzionale)
 
 ### 1. Clona il repository
 \`\`\`bash
@@ -65,8 +69,8 @@ GEMINI_API_KEY=your_gemini_api_key_here
 # OpenAI API Key (opzionale - se non fornita, OpenAI sarà disabilitato)  
 OPENAI_API_KEY=your_openai_api_key_here
 
-# Anthropic Claude API Key (opzionale - se non fornita, Claude sarà disabilitato)
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
+# Stability AI API Key (opzionale - se non fornita, Stability AI sarà disabilitato)
+STABILITY_API_KEY=your_stability_api_key_here
 
 # Porta del server (opzionale, default: 3000)
 PORT=3000
@@ -75,7 +79,7 @@ PORT=3000
 **Come ottenere le chiavi API:**
 - **Gemini**: [Google AI Studio](https://makersuite.google.com/app/apikey)
 - **OpenAI**: [OpenAI Platform](https://platform.openai.com/api-keys)
-- **Claude**: [Anthropic Console](https://console.anthropic.com/)
+- **Stability AI**: [Stability AI Platform](https://platform.stability.ai/)
 \`\`\`
 
 ### 4. Avvia l'applicazione

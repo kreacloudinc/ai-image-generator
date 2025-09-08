@@ -62,6 +62,21 @@
                     </div>
                 </div>
 
+                <!-- Negative Prompt (opzionale) -->
+                <div class="negative-prompt-section">
+                    <div class="form-group">
+                        <label for="negativePrompt">🚫 Negative Prompt (opzionale):</label>
+                        <textarea 
+                            id="negativePrompt" 
+                            placeholder="Descrivi cosa NON vuoi nell'immagine (es: blur, low quality, deformed, bad anatomy, extra limbs...)"
+                            rows="3"
+                        ></textarea>
+                        <small class="negative-prompt-note">
+                            💡 Supportato da Stability AI per migliorare la qualità evitando elementi indesiderati
+                        </small>
+                    </div>
+                </div>
+
                 <!-- Selezione Provider AI -->
                 <div class="provider-selection">
                     <h4>🤖 Seleziona Provider AI:</h4>
@@ -70,28 +85,42 @@
                             <input type="radio" name="provider" value="both" checked>
                             <span class="provider-info">
                                 <strong>🔥 Tutti (Confronto Completo)</strong>
-                                <small>Gemini + OpenAI + Claude - Migliore qualità</small>
+                                <small>Tutti i 4 modelli AI - Migliore qualità e confronto</small>
+                            </span>
+                        </label>
+                        <label class="provider-option">
+                            <input type="radio" name="provider" value="imagen4">
+                            <span class="provider-info">
+                                <strong>🚀 Google Gemini 1.5 Pro Vision</strong>
+                                <small>Analisi veloce e dettagliata - ~$0.005 per prompt</small>
                             </span>
                         </label>
                         <label class="provider-option">
                             <input type="radio" name="provider" value="openai">
                             <span class="provider-info">
-                                <strong>🎨 OpenAI DALL-E 3</strong>
-                                <small>Genera immagini reali - $0.040 per immagine</small>
+                                <strong>🎨 OpenAI DALL-E 3 HD</strong>
+                                <small>Alta qualità - $0.080 per immagine</small>
                             </span>
                         </label>
                         <label class="provider-option">
                             <input type="radio" name="provider" value="gemini">
                             <span class="provider-info">
-                                <strong>🔮 Google Gemini</strong>
-                                <small>Analisi e descrizione - ~$0.001 per prompt</small>
+                                <strong>🔮 Google Gemini 2.5</strong>
+                                <small>Analisi e trasformazione - $0.339 per immagine</small>
                             </span>
                         </label>
                         <label class="provider-option">
-                            <input type="radio" name="provider" value="claude">
+                            <input type="radio" name="provider" value="stability">
                             <span class="provider-info">
-                                <strong>👁️ Claude Vision</strong>
-                                <small>Analisi visiva avanzata - ~$0.003 per immagine</small>
+                                <strong>⚡ Stability AI SDXL</strong>
+                                <small>Stable Diffusion ottimizzato - $0.020 per immagine</small>
+                            </span>
+                        </label>
+                        <label class="provider-option">
+                            <input type="radio" name="provider" value="imagen4">
+                            <span class="provider-info">
+                                <strong>🚀 Google Imagen 4 Fast</strong>
+                                <small>Veloce ed economico - $0.001 per immagine</small>
                             </span>
                         </label>
                     </div>
