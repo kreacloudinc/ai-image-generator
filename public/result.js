@@ -1,7 +1,6 @@
 // Script per gestire la pagina dei risultati con confronto AI
 document.addEventListener('DOMContentLoaded', function() {
-    const initialLoader = docum        const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E 3 HD' : 
-                            provider === 'stability' ? '⚡ Stability AI SDXL' : '🔮 Google Gemini 2.5';.getElementById('initialLoader');
+    const initialLoader = document.getElementById('initialLoader');
     const resultContent = document.getElementById('resultContent');
     const originalImage = document.getElementById('originalImage');
     const usedPrompt = document.getElementById('usedPrompt');
@@ -33,6 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
+            // Prima verifica se la generazione è completata
+            await waitForCompletion(sessionId);
+            
             // Carica i dati del risultato dal server
             const response = await fetch(`/api/result/${sessionId}`);
             const data = await response.json();
@@ -83,6 +85,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     cost: result.gemini.cost.total,
                     type: result.gemini.type,
                     time: result.gemini.processingTime || 'N/A'
+                });
+            }
+        }
+
+        // Mostra risultati ComfyUI
+        if (result.comfyui) {
+            hasResults = true;
+            const comfyuiCard = createResultCard('comfyui', result.comfyui);
+            aiResults.appendChild(comfyuiCard);
+            
+            if (result.comfyui.cost) {
+                costs.push({
+                    provider: 'ComfyUI SD 3.5',
+                    cost: result.comfyui.cost.total,
+                    type: result.comfyui.type,
+                    time: result.comfyui.processingTime || 'N/A'
                 });
             }
         }
@@ -138,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.error) {
             const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E' : 
                                 provider === 'stability' ? '⚡ Stability AI' : 
-                                provider === 'imagen3' ? '🚀 Imagen 3' : '🔮 Google Gemini';
+                                provider === 'comfyui' ? '🎨 ComfyUI SD 3.5' : '🔮 Google Gemini';
             card.innerHTML = `
                 <div class="ai-result-header">
                     <div class="ai-provider ${provider}">
@@ -153,7 +171,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E 3 HD' : 
-                            provider === 'stability' ? '⚡ Stability AI SDXL' : '🔮 Google Gemini 2.5';
+                            provider === 'stability' ? '⚡ Stability AI SDXL' : 
+                            provider === 'comfyui' ? '🎨 ComfyUI SD 3.5 Large Turbo' : '🔮 Google Gemini 2.5';
         const costDisplay = data.cost ? `$${data.cost.total}` : 'N/A';
 
         card.innerHTML = `
@@ -268,5 +287,86 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function hideError() {
         errorMessage.classList.add('hidden');
+    }
+
+    /**
+     * Aspetta che la generazione sia completata con polling progressivo
+     */
+    async function waitForCompletion(sessionId) {
+        return new Promise((resolve) => {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/progress/${sessionId}`);
+                    const progressData = await response.json();
+
+                    // Aggiorna il contenuto con risultati parziali
+                    if (progressData.results && Object.keys(progressData.results).length > 0) {
+                        updatePartialResults(progressData.results);
+                    }
+
+                    // Aggiorna il loader con i progressi
+                    updateProgressLoader(progressData.progress);
+
+                    if (progressData.status === 'completed' || progressData.isComplete) {
+                        clearInterval(pollInterval);
+                        resolve();
+                        return;
+                    }
+
+                } catch (error) {
+                    console.error('Errore polling:', error);
+                    // Continua il polling anche in caso di errore temporaneo
+                }
+            }, 1000); // Polling ogni secondo
+
+            // Timeout di sicurezza (5 minuti)
+            setTimeout(() => {
+                clearInterval(pollInterval);
+                resolve(); // Procedi comunque dopo il timeout
+            }, 300000);
+        });
+    }
+
+    /**
+     * Aggiorna i risultati parziali man mano che arrivano
+     */
+    function updatePartialResults(results) {
+        // Nasconde il loader iniziale e mostra il contenuto
+        if (initialLoader && !initialLoader.classList.contains('hidden')) {
+            initialLoader.classList.add('hidden');
+            resultContent.classList.remove('hidden');
+        }
+
+        // Aggiorna solo i risultati che sono arrivati
+        Object.keys(results).forEach(provider => {
+            const result = results[provider];
+            
+            // Controlla se questo risultato è già stato mostrato
+            const existingCard = document.querySelector(`[data-provider="${provider}"]`);
+            if (!existingCard && result && !result.error) {
+                const card = createResultCard(provider, result);
+                card.setAttribute('data-provider', provider);
+                aiResults.appendChild(card);
+            }
+        });
+    }
+
+    /**
+     * Aggiorna il messaggio del loader con i progressi
+     */
+    function updateProgressLoader(progress) {
+        const loaderText = initialLoader.querySelector('p');
+        if (!loaderText || !progress) return;
+
+        const providers = ['gemini', 'openai', 'stability', 'comfyui'];
+        const completed = providers.filter(p => progress[p] === 'completed').length;
+        const generating = providers.filter(p => progress[p] === 'generating').length;
+        const total = providers.length;
+
+        if (completed > 0) {
+            loaderText.textContent = `Generazione in corso... (${completed}/${total} completati)`;
+        } else if (generating > 0) {
+            loaderText.textContent = 'Generazione in corso...';
+        }
     }
 });

@@ -129,6 +129,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const loaderText = document.querySelector('#loader p');
         if (selectedProvider === 'both') {
             loaderText.textContent = 'Generazione con tutti i modelli AI in corso...';
+        } else if (selectedProvider === 'comfyui') {
+            loaderText.textContent = 'Generazione con ComfyUI SD 3.5 Large Turbo in corso...';
         } else if (selectedProvider === 'openai') {
             loaderText.textContent = 'Generazione con OpenAI DALL-E in corso...';
         } else if (selectedProvider === 'stability') {
@@ -160,8 +162,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 sessionStorage.setItem('prompt', prompt);
                 sessionStorage.setItem('selectedProvider', selectedProvider);
                 
-                // Vai alla pagina risultato
-                window.location.href = 'result.html';
+                // Avvia il polling per i risultati progressivi
+                startProgressPolling(sessionId, selectedProvider);
+                
             } else {
                 throw new Error(result.error || 'Errore durante generazione');
             }
@@ -208,5 +211,80 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function hideError() {
         errorMessage.classList.add('hidden');
+    }
+
+    /**
+     * Avvia il polling per risultati progressivi
+     */
+    function startProgressPolling(sessionId, selectedProvider) {
+        const pollInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/api/progress/${sessionId}`);
+                const progressData = await response.json();
+
+                if (progressData.status === 'completed' || progressData.isComplete) {
+                    clearInterval(pollInterval);
+                    // Vai alla pagina risultato quando completato
+                    window.location.href = 'result.html';
+                    return;
+                }
+
+                // Aggiorna il messaggio del loader con i progressi
+                updateLoaderProgress(progressData.progress, selectedProvider);
+
+            } catch (error) {
+                console.error('Errore polling:', error);
+                // Continua il polling anche in caso di errore temporaneo
+            }
+        }, 1000); // Polling ogni secondo
+
+        // Timeout di sicurezza (5 minuti)
+        setTimeout(() => {
+            clearInterval(pollInterval);
+            if (document.querySelector('#loader:not(.hidden)')) {
+                // Se il loader è ancora visibile, vai alla pagina risultato
+                window.location.href = 'result.html';
+            }
+        }, 300000); // 5 minuti
+    }
+
+    /**
+     * Aggiorna il messaggio del loader con i progressi
+     */
+    function updateLoaderProgress(progress, selectedProvider) {
+        const loaderText = document.querySelector('#loader p');
+        if (!loaderText) return;
+
+        if (selectedProvider === 'both') {
+            const providers = ['gemini', 'openai', 'stability', 'comfyui'];
+            const completed = providers.filter(p => progress[p] === 'completed').length;
+            const total = providers.length;
+            
+            if (completed > 0) {
+                loaderText.textContent = `Generazione in corso... (${completed}/${total} completati)`;
+            }
+        } else {
+            const status = progress[selectedProvider];
+            if (status === 'generating') {
+                loaderText.textContent = `Generazione con ${getProviderName(selectedProvider)} in corso...`;
+            } else if (status === 'completed') {
+                loaderText.textContent = `${getProviderName(selectedProvider)} completato!`;
+            } else if (status === 'error') {
+                loaderText.textContent = `Errore con ${getProviderName(selectedProvider)}, caricamento risultati...`;
+            }
+        }
+    }
+
+    /**
+     * Ottieni il nome del provider per visualizzazione
+     */
+    function getProviderName(provider) {
+        switch (provider) {
+            case 'gemini': return 'Gemini';
+            case 'openai': return 'OpenAI DALL-E';
+            case 'stability': return 'Stability AI';
+            case 'comfyui': return 'ComfyUI';
+            default: return provider;
+        }
     }
 });

@@ -263,6 +263,23 @@ app.get('/api/image/:sessionId', (req, res) => {
   res.json(sessionData[sessionId]);
 });
 
+// API: Ottieni risultati progressivi (polling)
+app.get('/api/progress/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  
+  if (!sessionData[sessionId]) {
+    return res.status(404).json({ error: 'Sessione non trovata' });
+  }
+
+  const session = sessionData[sessionId];
+  res.json({
+    status: session.status || 'idle',
+    results: session.result || {},
+    progress: session.progress || {},
+    isComplete: session.isComplete || false
+  });
+});
+
 // API: Genera immagine da prompt
 app.post('/api/generate', async (req, res) => {
   try {
@@ -278,62 +295,98 @@ app.post('/api/generate', async (req, res) => {
 
     // Salva il prompt nella sessione
     sessionData[sessionId].prompt = prompt;
+    sessionData[sessionId].status = 'generating';
+    sessionData[sessionId].progress = {};
+    sessionData[sessionId].result = {};
+    sessionData[sessionId].isComplete = false;
 
     console.log(`🎨 Generazione immagine per: "${prompt}"`);
     console.log(`🔧 Provider: ${provider}`);
 
-    let results = {};
+    // Inizia la generazione in background
+    generateImagesAsync(sessionId, prompt, provider);
 
-    // Genera con Gemini (sempre per descrizione)
-    if (provider === 'gemini' || provider === 'both') {
-      console.log('🤖 Generando con Gemini...');
-      try {
-        results.gemini = await generateWithGemini(prompt, sessionData[sessionId].imagePath);
-      } catch (error) {
-        console.error('❌ Errore Gemini:', error.message);
-        results.gemini = { error: error.message };
-      }
-    }
-
-    // Genera con OpenAI DALL-E
-    if (provider === 'openai' || provider === 'both') {
-      console.log('🎨 Generando con OpenAI DALL-E...');
-      try {
-        results.openai = await generateWithOpenAI(prompt, sessionData[sessionId].imagePath);
-      } catch (error) {
-        console.error('❌ Errore OpenAI:', error.message);
-        results.openai = { error: error.message };
-      }
-    }
-
-    // Genera con Stability AI
-    if (provider === 'stability' || provider === 'both') {
-      console.log('⚡ Generando con Stability AI...');
-      try {
-        results.stability = await generateWithStabilityAI(prompt);
-      } catch (error) {
-        console.error('❌ Errore Stability AI:', error.message);
-        results.stability = { error: error.message };
-      }
-    }
-
-
-    
-    // Salva il risultato nella sessione
-    sessionData[sessionId].result = results;
-
-    console.log(`✅ Generazione completata`);
-
+    // Risposta immediata per avviare il polling
     res.json({
       success: true,
-      results: results,
-      message: 'Generazione completata!'
+      message: 'Generazione avviata',
+      sessionId: sessionId,
+      status: 'generating'
     });
+
   } catch (error) {
     console.error('Errore generazione:', error);
-    res.status(500).json({ error: 'Errore durante la generazione: ' + error.message });
+    res.status(500).json({ error: 'Errore interno del server' });
   }
 });
+
+// Funzione asincrona per generare immagini in background
+async function generateImagesAsync(sessionId, prompt, provider) {
+  try {
+    const results = {};
+    sessionData[sessionId].progress = {};
+
+    // Lista dei provider da utilizzare
+    const providers = [];
+    if (provider === 'both') {
+      providers.push('gemini', 'openai', 'stability', 'comfyui');
+    } else {
+      providers.push(provider);
+    }
+
+    // Funzioni di generazione per ogni provider
+    const generationPromises = providers.map(async (providerName) => {
+      try {
+        sessionData[sessionId].progress[providerName] = 'generating';
+        
+        let result;
+        switch (providerName) {
+          case 'gemini':
+            console.log('🤖 Generando con Gemini...');
+            result = await generateWithGemini(prompt, sessionData[sessionId].imagePath);
+            break;
+          case 'openai':
+            console.log('🎨 Generando con OpenAI DALL-E...');
+            result = await generateWithOpenAI(prompt, sessionData[sessionId].imagePath);
+            break;
+          case 'stability':
+            console.log('⚡ Generando con Stability AI...');
+            result = await generateWithStabilityAI(prompt);
+            break;
+          case 'comfyui':
+            console.log('🎨 Generando con ComfyUI...');
+            result = await generateWithComfyUI(prompt, sessionData[sessionId].imagePath);
+            break;
+        }
+        
+        results[providerName] = result;
+        sessionData[sessionId].result[providerName] = result;
+        sessionData[sessionId].progress[providerName] = 'completed';
+        
+        console.log(`✅ ${providerName} completato`);
+        
+      } catch (error) {
+        console.error(`❌ Errore ${providerName}:`, error.message);
+        results[providerName] = { error: error.message };
+        sessionData[sessionId].result[providerName] = { error: error.message };
+        sessionData[sessionId].progress[providerName] = 'error';
+      }
+    });
+
+    // Aspetta che tutte le generazioni siano completate
+    await Promise.allSettled(generationPromises);
+
+    // Aggiorna lo stato finale
+    sessionData[sessionId].status = 'completed';
+    sessionData[sessionId].isComplete = true;
+    console.log(`✅ Generazione completata per sessione ${sessionId}`);
+
+  } catch (error) {
+    console.error('Errore nella generazione asincrona:', error);
+    sessionData[sessionId].status = 'error';
+    sessionData[sessionId].progress = { error: error.message };
+  }
+}
 
 // API: Ottieni risultato generazione
 app.get('/api/result/:sessionId', (req, res) => {
@@ -705,7 +758,244 @@ async function generateWithStabilityAI(prompt) {
   }
 }
 
+/**
+ * Genera immagine usando ComfyUI con Stable Diffusion 3.5 Large Turbo
+ */
+async function generateWithComfyUI(prompt, inputImagePath = null) {
+  try {
+    console.log('🎨 Generazione immagine con ComfyUI SD 3.5 Large Turbo...');
+    console.log('🖼️ Immagine input:', inputImagePath || 'Text-to-Image');
+    
+    const startTime = Date.now();
+    
+    // Workflow JSON corretto per SDXL
+    const workflow = {
+      "1": {
+        "inputs": {
+          "ckpt_name": "sd_xl_base_1.0.safetensors"
+        },
+        "class_type": "CheckpointLoaderSimple",
+        "_meta": {
+          "title": "Load Checkpoint"
+        }
+      },
+      "2": {
+        "inputs": {
+          "text": prompt,
+          "clip": ["1", 1]
+        },
+        "class_type": "CLIPTextEncode",
+        "_meta": {
+          "title": "CLIP Text Encode (Prompt)"
+        }
+      },
+      "3": {
+        "inputs": {
+          "text": "low quality, blurry, distorted, watermark, text, signature",
+          "clip": ["1", 1]
+        },
+        "class_type": "CLIPTextEncode",
+        "_meta": {
+          "title": "CLIP Text Encode (Negative)"
+        }
+      },
+      "4": {
+        "inputs": {
+          "width": 1024,
+          "height": 1024,
+          "batch_size": 1
+        },
+        "class_type": "EmptyLatentImage",
+        "_meta": {
+          "title": "Empty Latent Image"
+        }
+      },
+      "5": {
+        "inputs": {
+          "seed": Math.floor(Math.random() * 1000000),
+          "steps": 25,
+          "cfg": 8.0,
+          "sampler_name": "euler",
+          "scheduler": "normal",
+          "denoise": inputImagePath ? 0.75 : 1.0,
+          "model": ["1", 0],
+          "positive": ["2", 0],
+          "negative": ["3", 0],
+          "latent_image": inputImagePath ? ["13", 0] : ["4", 0]
+        },
+        "class_type": "KSampler",
+        "_meta": {
+          "title": "KSampler"
+        }
+      },
+      "6": {
+        "inputs": {
+          "samples": ["5", 0],
+          "vae": ["1", 2]
+        },
+        "class_type": "VAEDecode",
+        "_meta": {
+          "title": "VAE Decode"
+        }
+      },
+      "7": {
+        "inputs": {
+          "filename_prefix": "ComfyUI_SDXL",
+          "images": ["6", 0]
+        },
+        "class_type": "SaveImage",
+        "_meta": {
+          "title": "Save Image"
+        }
+      }
+    };
 
+    // Se abbiamo un'immagine di input, aggiungiamo i nodi per image-to-image
+    if (inputImagePath) {
+      // ComfyUI si aspetta solo il nome del file, non il path completo
+      const imageName = path.basename(inputImagePath);
+      
+      workflow["10"] = {
+        "inputs": {
+          "image": imageName
+        },
+        "class_type": "LoadImage",
+        "_meta": {
+          "title": "Load Image"
+        }
+      };
+      
+      workflow["13"] = {
+        "inputs": {
+          "pixels": ["10", 0],
+          "vae": ["1", 2]
+        },
+        "class_type": "VAEEncode",
+        "_meta": {
+          "title": "VAE Encode"
+        }
+      };
+    }
+
+    console.log('🌐 Chiamata API ComfyUI...');
+    
+    // Prima chiamiamo l'API per mettere in coda il prompt
+    const queueResponse = await axios.post(`${COMFYUI_URL}/prompt`, {
+      prompt: workflow,
+      client_id: `nodejs-${Date.now()}`
+    }, {
+      timeout: 10000
+    });
+
+    const promptId = queueResponse.data.prompt_id;
+    console.log('📝 Prompt ID ComfyUI:', promptId);
+
+    // Polling per controllare lo stato
+    let completed = false;
+    let attempts = 0;
+    const maxAttempts = 120; // 2 minuti massimo
+    
+    while (!completed && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Attendi 1 secondo
+      attempts++;
+      
+      try {
+        const historyResponse = await axios.get(`${COMFYUI_URL}/history/${promptId}`, {
+          timeout: 5000
+        });
+        
+        if (historyResponse.data[promptId]) {
+          const history = historyResponse.data[promptId];
+          if (history.status && history.status.completed) {
+            completed = true;
+            console.log('✅ Generazione ComfyUI completata');
+            
+            // Ottieni i dati dell'immagine
+            const outputs = history.outputs;
+            if (outputs && outputs["7"] && outputs["7"].images && outputs["7"].images.length > 0) {
+              const imageInfo = outputs["7"].images[0];
+              
+              // Scarica l'immagine da ComfyUI
+              const imageResponse = await axios.get(`${COMFYUI_URL}/view`, {
+                params: {
+                  filename: imageInfo.filename,
+                  subfolder: imageInfo.subfolder || '',
+                  type: imageInfo.type || 'output'
+                },
+                responseType: 'arraybuffer'
+              });
+              
+              // Salva l'immagine localmente
+              const timestamp = Date.now();
+              const randomId = Math.floor(Math.random() * 1000000000);
+              const filename = `comfyui-${timestamp}-${randomId}.png`;
+              const filepath = path.join(generatedDir, filename);
+              
+              fs.writeFileSync(filepath, imageResponse.data);
+              const savedImagePath = `/generated/${filename}`;
+              
+              console.log('💾 Immagine ComfyUI salvata:', filename);
+              
+              const processingTime = Date.now() - startTime;
+              
+              return {
+                provider: 'comfyui',
+                success: true,
+                type: 'image',
+                generatedImageUrl: savedImagePath,
+                savedImagePath: savedImagePath,
+                imageUrl: savedImagePath,
+                filename: filename,
+                prompt: prompt,
+                aiDescription: `Immagine generata con ComfyUI e Stable Diffusion XL Base 1.0. Modello di alta qualità ottimizzato per immagini 1024x1024 con supporto completo per image-to-image transformation. Eccellente balance tra velocità e qualità.`,
+                cost: {
+                  input: '0.000',
+                  output: '0.000',
+                  total: '0.000',
+                  currency: 'USD',
+                  breakdown: 'ComfyUI locale - nessun costo API'
+                },
+                generatedAt: new Date().toISOString(),
+                processingTime: `${processingTime}ms`,
+                imageSpecs: {
+                  model: "stable-diffusion-xl-base-1.0",
+                  type: inputImagePath ? "image-to-image" : "text-to-image",
+                  quality: "high",
+                  resolution: "1024x1024",
+                  provider: "ComfyUI Local",
+                  denoise: inputImagePath ? 0.75 : 1.0,
+                  steps: 25,
+                  cfg: 7.5
+                }
+              };
+            } else {
+              throw new Error('Nessuna immagine trovata nell\'output di ComfyUI');
+            }
+          }
+        }
+      } catch (pollError) {
+        console.log(`⏳ Polling tentativo ${attempts}/${maxAttempts}...`);
+      }
+    }
+    
+    if (!completed) {
+      throw new Error('Timeout: ComfyUI non ha completato la generazione entro 2 minuti');
+    }
+    
+  } catch (error) {
+    console.error('❌ Errore ComfyUI:', error.message);
+    
+    if (error.code === 'ECONNREFUSED') {
+      throw new Error('ComfyUI non è accessibile. Assicurati che sia in esecuzione su ' + COMFYUI_URL);
+    } else if (error.response?.status === 400) {
+      throw new Error('Workflow ComfyUI non valido o modello non trovato');
+    } else if (error.response?.status === 500) {
+      throw new Error('Errore interno di ComfyUI durante la generazione');
+    } else {
+      throw new Error(`ComfyUI: ${error.message}`);
+    }
+  }
+}
 
 // Gestione errori Multer
 app.use((error, req, res, next) => {
@@ -733,11 +1023,12 @@ app.listen(PORT, () => {
   console.log('   GET  /api/images - Elenca immagini esistenti');
   console.log('   POST /api/select-image - Seleziona immagine esistente');
   console.log('   GET  /api/image/:sessionId - Ottieni dati immagine');
-  console.log('      POST /api/generate - Genera immagine da prompt (Gemini + OpenAI + Stability)');
+  console.log('      POST /api/generate - Genera immagine da prompt (Gemini + OpenAI + Stability + ComfyUI)');
   console.log('   GET  /api/result/:sessionId - Ottieni risultato');
   console.log('   DELETE /api/session/:sessionId - Reset sessione');
   console.log('\n🤖 AI Providers:');
   console.log('   🔮 Gemini 2.5 Flash Image Preview - Generazione immagini AI');
   console.log('   🎨 OpenAI DALL-E 3 - Generazione immagini');
   console.log('   ⚡ Stability AI Stable Diffusion XL - Generazione immagini di alta qualità');
+  console.log('   🎨 ComfyUI SD 3.5 Large Turbo - Generazione locale ultra-veloce');
 });
