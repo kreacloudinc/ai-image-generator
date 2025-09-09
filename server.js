@@ -857,7 +857,7 @@ async function generateWithComfyUI(prompt, inputImagePath = null) {
       
       // Copia l'immagine nella cartella input di ComfyUI
       const comfyInputPath = '/Users/kreativemilano/PROGETTI GIT/ComfyUI/input/';
-      const sourceImagePath = path.resolve(inputImagePath);
+      const sourceImagePath = path.join(__dirname, 'uploads', inputImagePath);
       const destImagePath = path.join(comfyInputPath, imageName);
       
       console.log(`📁 Copiando immagine: ${sourceImagePath} → ${destImagePath}`);
