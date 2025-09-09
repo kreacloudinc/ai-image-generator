@@ -18,6 +18,20 @@ uploads/*.jpeg
 uploads/*.gif
 uploads/*.webp
 
+# ComfyUI - Ignore models and outputs but keep structure
+ComfyUI/models/checkpoints/*.safetensors
+ComfyUI/models/checkpoints/*.ckpt
+ComfyUI/models/checkpoints/*.pth
+ComfyUI/models/vae/*.safetensors
+ComfyUI/models/vae/*.ckpt
+ComfyUI/output/*.png
+ComfyUI/output/*.jpg
+ComfyUI/input/*.png
+ComfyUI/input/*.jpg
+ComfyUI/temp/
+ComfyUI/__pycache__/
+ComfyUI/.git/
+
 # Keep uploads directory but ignore images
 !uploads/.gitkeep
 
