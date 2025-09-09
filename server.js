@@ -855,6 +855,14 @@ async function generateWithComfyUI(prompt, inputImagePath = null) {
       // ComfyUI si aspetta solo il nome del file, non il path completo
       const imageName = path.basename(inputImagePath);
       
+      // Copia l'immagine nella cartella input di ComfyUI
+      const comfyInputPath = '/Users/kreativemilano/PROGETTI GIT/ComfyUI/input/';
+      const sourceImagePath = path.resolve(inputImagePath);
+      const destImagePath = path.join(comfyInputPath, imageName);
+      
+      console.log(`📁 Copiando immagine: ${sourceImagePath} → ${destImagePath}`);
+      fs.copyFileSync(sourceImagePath, destImagePath);
+      
       workflow["10"] = {
         "inputs": {
           "image": imageName
@@ -904,8 +912,12 @@ async function generateWithComfyUI(prompt, inputImagePath = null) {
           timeout: 5000
         });
         
+        console.log(`🔍 Polling tentativo ${attempts}: Controllando promptId ${promptId}`);
+        
         if (historyResponse.data[promptId]) {
           const history = historyResponse.data[promptId];
+          console.log('📊 Storia trovata:', JSON.stringify(history.status, null, 2));
+          
           if (history.status && history.status.completed) {
             completed = true;
             console.log('✅ Generazione ComfyUI completata');
@@ -972,9 +984,11 @@ async function generateWithComfyUI(prompt, inputImagePath = null) {
               throw new Error('Nessuna immagine trovata nell\'output di ComfyUI');
             }
           }
+        } else {
+          console.log(`⏳ Tentativo ${attempts}: promptId ${promptId} non ancora nella history`);
         }
       } catch (pollError) {
-        console.log(`⏳ Polling tentativo ${attempts}/${maxAttempts}...`);
+        console.log(`⏳ Polling tentativo ${attempts}/${maxAttempts}... (${pollError.message})`);
       }
     }
     
