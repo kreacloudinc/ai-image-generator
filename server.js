@@ -914,16 +914,20 @@ async function generateWithComfyUI(prompt, inputImagePath = null) {
         
         console.log(`🔍 Polling tentativo ${attempts}: Controllando promptId ${promptId}`);
         
-        if (historyResponse.data[promptId]) {
-          const history = historyResponse.data[promptId];
-          console.log('📊 Storia trovata:', JSON.stringify(history.status, null, 2));
+        // La risposta di /history/{promptId} restituisce direttamente l'oggetto del prompt
+        const history = historyResponse.data;
+        
+        if (history && Object.keys(history).length > 0) {
+          // Prendi il primo (e unico) prompt dalla risposta
+          const promptData = Object.values(history)[0];
+          console.log('📊 Storia trovata:', JSON.stringify(promptData.status, null, 2));
           
-          if (history.status && history.status.completed) {
+          if (promptData.status && promptData.status.completed) {
             completed = true;
             console.log('✅ Generazione ComfyUI completata');
             
             // Ottieni i dati dell'immagine
-            const outputs = history.outputs;
+            const outputs = promptData.outputs;
             if (outputs && outputs["7"] && outputs["7"].images && outputs["7"].images.length > 0) {
               const imageInfo = outputs["7"].images[0];
               
