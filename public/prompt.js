@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (selectedProvider === 'comfyui') {
             loaderText.textContent = 'Generazione con ComfyUI SD 3.5 Large Turbo in corso...';
         } else if (selectedProvider === 'openai') {
-            loaderText.textContent = 'Generazione con OpenAI DALL-E in corso...';
+            loaderText.textContent = 'Generazione con OpenAI GPT Image 1 in corso...';
         } else if (selectedProvider === 'stability') {
             loaderText.textContent = 'Generazione con Stability AI in corso...';
         } else if (selectedProvider === 'gemini') {
@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getProviderName(provider) {
         switch (provider) {
             case 'gemini': return 'Gemini';
-            case 'openai': return 'OpenAI DALL-E';
+            case 'openai': return 'OpenAI GPT Image 1';
             case 'stability': return 'Stability AI';
             case 'comfyui': return 'ComfyUI';
             default: return provider;

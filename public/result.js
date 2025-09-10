@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (result.openai.cost) {
                 costs.push({
-                    provider: 'OpenAI DALL-E',
+                    provider: 'OpenAI GPT Image 1',
                     cost: result.openai.cost.total,
                     type: result.openai.type,
                     time: result.openai.processingTime || 'N/A'
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         card.className = `ai-result-card ${provider}`;
 
         if (data.error) {
-            const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E' : 
+            const providerName = provider === 'openai' ? '🎨 OpenAI GPT Image 1' : 
                                 provider === 'stability' ? '⚡ Stability AI' : 
                                 provider === 'comfyui' ? '🎨 ComfyUI SD 3.5' : '🔮 Google Gemini';
             card.innerHTML = `
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return card;
         }
 
-        const providerName = provider === 'openai' ? '🎨 OpenAI DALL-E 3 HD' : 
+        const providerName = provider === 'openai' ? '🎨 OpenAI GPT Image 1' : 
                             provider === 'stability' ? '⚡ Stability AI SDXL' : 
                             provider === 'comfyui' ? '🎨 ComfyUI SD 3.5 Large Turbo' : '🔮 Google Gemini 2.5';
         const costDisplay = data.cost ? `$${data.cost.total}` : 'N/A';

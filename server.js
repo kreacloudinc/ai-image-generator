@@ -184,7 +184,7 @@ app.get('/api/generated-images', (req, res) => {
       if (filename.startsWith('openai-')) {
         provider = 'openai';
         providerIcon = '🎨';
-        providerName = 'OpenAI DALL-E';
+        providerName = 'OpenAI GPT Image 1';
       } else if (filename.startsWith('gemini-')) {
         provider = 'gemini';
         providerIcon = '🔮';
@@ -346,7 +346,7 @@ async function generateImagesAsync(sessionId, prompt, provider) {
             result = await generateWithGemini(prompt, sessionData[sessionId].imagePath);
             break;
           case 'openai':
-            console.log('🎨 Generando con OpenAI DALL-E...');
+            console.log('🎨 Generando con OpenAI GPT Image 1...');
             result = await generateWithOpenAI(prompt, sessionData[sessionId].imagePath);
             break;
           case 'stability':
@@ -485,8 +485,10 @@ Generate the image now.`;
               }
               
               // Calcola costi Gemini 2.5 Flash Image Preview
-              const inputCost = 0.30; // $0.30 per input
-              const outputCost = 0.039; // $0.039 per immagine output
+              // Prezzi ufficiali: $0.30 per 1M token input, $0.039 per immagine output
+              const promptTokens = Math.ceil((imagePrompt.length + originalImagePath.length) / 4); // Stima approssimativa
+              const inputCost = (promptTokens / 1000000) * 0.30; // $0.30 per milione di token
+              const outputCost = 0.039; // $0.039 per immagine output (1290 token)
               const totalCost = inputCost + outputCost;
               
               console.log('✅ Generazione Gemini Immagine completata');
@@ -521,11 +523,9 @@ Generate the image now.`;
       const inputTokens = Math.ceil((prompt.length + imagePrompt.length) / 4);
       const outputTokens = Math.ceil(description.length / 4);
       
-      const inputCostPer1000 = 0.30; // $0.30 per 1000 input tokens  
-      const outputCostPer1000 = 2.50; // $2.50 per 1000 output tokens
-      
-      const inputCost = (inputTokens / 1000) * inputCostPer1000;
-      const outputCost = (outputTokens / 1000) * outputCostPer1000;
+      // Prezzi ufficiali Gemini 2.5 Flash Image Preview: $0.30 per 1M input, $2.50 per 1M output  
+      const inputCost = (inputTokens / 1000000) * 0.30; // $0.30 per milione input tokens
+      const outputCost = (outputTokens / 1000000) * 2.50; // $2.50 per milione output tokens
       const totalCost = inputCost + outputCost;
 
       console.log('⚠️  Gemini ha fornito descrizione invece di immagine');
@@ -578,7 +578,7 @@ Generate the image now.`;
 }
 
 /**
- * Genera immagine usando OpenAI DALL-E
+ * Genera immagine usando OpenAI GPT Image 1
  */
 async function generateWithOpenAI(prompt, originalImagePath) {
   try {
@@ -593,26 +593,43 @@ async function generateWithOpenAI(prompt, originalImagePath) {
       };
     }
 
-    console.log('🎨 Generazione con OpenAI DALL-E...');
+    console.log('🎨 Generazione con OpenAI GPT Image 1...');
     
     const startTime = Date.now();
     
-    // Ottimizza il prompt per DALL-E
+    // Ottimizza il prompt per GPT Image 1
     const optimizedPrompt = `Transform the style and appearance of the subject to match this description: ${prompt}. Maintain facial features and expressions. High quality, detailed, professional artwork.`;
     
-    // Genera l'immagine con DALL-E 3
+    // Genera l'immagine con GPT Image 1
+    // Supporta formato wide/portrait per prompt cinematografici
+    const isWideFormat = prompt.toLowerCase().includes('cinema') || 
+                        prompt.toLowerCase().includes('wide') || 
+                        prompt.toLowerCase().includes('panorama') ||
+                        prompt.toLowerCase().includes('landscape');
+    
+    const isPortraitFormat = prompt.toLowerCase().includes('portrait') ||
+                            prompt.toLowerCase().includes('vertical') ||
+                            prompt.toLowerCase().includes('tall');
+    
+    // Seleziona dimensioni supportate da GPT Image 1
+    let imageSize = "1024x1024"; // Default quadrato
+    if (isWideFormat) {
+      imageSize = "1536x1024"; // Wide format
+    } else if (isPortraitFormat) {
+      imageSize = "1024x1536"; // Portrait format
+    }
+    
     const response = await openai.images.generate({
-      model: "dall-e-3",
+      model: "gpt-image-1",
       prompt: optimizedPrompt,
       n: 1,
-      size: "1024x1024",
-      quality: "standard",
-      response_format: "url"
+      size: imageSize,
+      quality: "high"
     });
     
     const processingTime = Date.now() - startTime;
     
-    // Salva l'immagine generata localmente
+    // Salva l'immagine generata localmente (da URL)
     let savedImagePath = null;
     try {
       const imageResponse = await fetch(response.data[0].url);
@@ -630,8 +647,9 @@ async function generateWithOpenAI(prompt, originalImagePath) {
       console.error('⚠️ Errore salvataggio immagine OpenAI:', saveError.message);
     }
     
-    // Calcola costi OpenAI DALL-E 3
-    const dallE3Cost = 0.040; // $0.04 per immagine 1024x1024 standard
+    // Calcola costi OpenAI GPT Image 1 (varia con le dimensioni)
+    const isLargeFormat = imageSize !== "1024x1024";
+    const gptImage1Cost = isLargeFormat ? 0.080 : 0.040; // $0.08 per formati grandi, $0.04 per 1024x1024
     
     console.log('✅ Generazione OpenAI completata');
 
@@ -644,24 +662,25 @@ async function generateWithOpenAI(prompt, originalImagePath) {
       originalImagePath: `/uploads/${originalImagePath}`,
       prompt: prompt,
       optimizedPrompt: optimizedPrompt,
-      aiDescription: `Immagine generata da OpenAI DALL-E 3 basata sul prompt: "${prompt}"`,
+      aiDescription: `Immagine generata da OpenAI GPT Image 1 basata sul prompt: "${prompt}"`,
       tokens: {
-        input: null, // DALL-E non usa token standard
+        input: null, // GPT Image 1 non usa token standard
         output: null,
         total: null
       },
       cost: {
         input: 0,
-        output: dallE3Cost,
-        total: dallE3Cost,
+        output: gptImage1Cost,
+        total: gptImage1Cost,
         currency: 'USD'
       },
       generatedAt: new Date().toISOString(),
       processingTime: `${processingTime}ms`,
       imageSpecs: {
-        model: "dall-e-3",
-        size: "1024x1024",
-        quality: "standard"
+        model: "gpt-image-1",
+        size: imageSize,
+        quality: "high",
+        n: 1
       }
     };
     
@@ -674,7 +693,7 @@ async function generateWithOpenAI(prompt, originalImagePath) {
     } else if (error.code === 'invalid_api_key') {
       throw new Error('Chiave API OpenAI non valida.');
     } else {
-      throw new Error(`OpenAI DALL-E: ${error.message}`);
+      throw new Error(`OpenAI GPT Image 1: ${error.message}`);
     }
   }
 }
@@ -1046,7 +1065,7 @@ app.listen(PORT, () => {
   console.log('   DELETE /api/session/:sessionId - Reset sessione');
   console.log('\n🤖 AI Providers:');
   console.log('   🔮 Gemini 2.5 Flash Image Preview - Generazione immagini AI');
-  console.log('   🎨 OpenAI DALL-E 3 - Generazione immagini');
+  console.log('   🎨 OpenAI GPT Image 1 - Generazione immagini');
   console.log('   ⚡ Stability AI Stable Diffusion XL - Generazione immagini di alta qualità');
   console.log('   🎨 ComfyUI SD 3.5 Large Turbo - Generazione locale ultra-veloce');
 });
