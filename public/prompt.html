@@ -46,6 +46,12 @@
                             <button type="button" class="preset-btn" data-prompt="DO NOT ALTER THE FACE — use the uploaded image as reference and preserve facial features and expressions. Ultra-realistic face, sharp detail, cinematic lighting. A futuristic designer holding a glowing red digital tablet with 3D holographic wireframes. Wearing a dark techwear jacket with illuminated seams and emblem. Red digital background with floating grids, interface elements, and creative tech lab atmosphere. Highly detailed and clean.">
                                 🎨 The Designer
                             </button>
+                            <button type="button" class="preset-btn" data-prompt="CREATE IMAGE: Full-body avatar, exact same face from reference. Standing pose, white background, 9:16. Centered composition, realistic proportions. Modern style, studio lighting. GENERATE VISUAL IMAGE ONLY">
+                                👤 Avatar Creator
+                            </button>
+                            <button type="button" class="preset-btn" data-prompt="CREATE IMAGE: Historical character, full-body standing pose. Period-accurate clothing from any era. White background, 9:16, centered. Dignified expression, era-appropriate style. Museum quality realism. GENERATE VISUAL IMAGE ONLY">
+                                🏛️ Historical Figure
+                            </button>
                         </div>
                     </div>
                     
@@ -116,6 +122,48 @@
                                 <small>Stable Diffusion ottimizzato - $0.020 per immagine</small>
                             </span>
                         </label>
+                    </div>
+                </div>
+
+                <!-- Batch Generation Settings -->
+                <div class="batch-generation-section">
+                    <h4>🔄 Generazione in Serie (Batch):</h4>
+                    <div class="batch-options">
+                        <label class="batch-option">
+                            <input type="radio" name="generationType" value="single" checked>
+                            <span class="batch-info">
+                                <strong>🎯 Generazione Singola</strong>
+                                <small>Genera una sola immagine</small>
+                            </span>
+                        </label>
+                        <label class="batch-option">
+                            <input type="radio" name="generationType" value="batch">
+                            <span class="batch-info">
+                                <strong>🔄 Generazione in Serie</strong>
+                                <small>Ritera lo stesso prompt variando gli elementi</small>
+                            </span>
+                        </label>
+                    </div>
+                    
+                    <div class="batch-settings" id="batchSettings" style="display: none;">
+                        <div class="batch-info-notice">
+                            <p><strong>🔮 Batch Generation - Solo Gemini</strong></p>
+                            <small>I batch utilizzano esclusivamente Google Gemini per garantire coerenza e qualità ottimale delle variazioni</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="iterations">Numero di iterazioni:</label>
+                            <div class="iterations-input">
+                                <input type="range" id="iterationsRange" min="2" max="100" value="10" class="range-input">
+                                <input type="number" id="iterations" min="2" max="1000" value="10" class="number-input">
+                            </div>
+                            <small class="iterations-note">
+                                💡 Ogni iterazione varia elementi come outfit, angolazione, stile mantenendo il volto coerente
+                            </small>
+                        </div>
+                        <div class="batch-preview">
+                            <span>🎯 Genererà: <strong id="batchPreview">10 immagini</strong></span>
+                            <span class="cost-estimate" id="costEstimate">💰 Costo stimato: $0.80</span>
+                        </div>
                     </div>
                 </div>
 

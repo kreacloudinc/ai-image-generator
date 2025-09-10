@@ -86,11 +86,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const iterations = parseInt(iterationsNumber.value) || 10;
         const selectedProvider = document.querySelector('input[name="provider"]:checked').value;
         
-        // I batch usano SOLO Gemini
-        const geminiCost = iterations * PROVIDER_COSTS.gemini;
+        let totalCost = 0;
         
-        batchPreview.textContent = `${iterations} immagini con Gemini`;
-        costEstimate.textContent = `💰 Costo stimato: $${geminiCost.toFixed(2)} (solo Gemini)`;
+        if (selectedProvider === 'both') {
+            // Calculate for all providers
+            totalCost = iterations * (PROVIDER_COSTS.openai + PROVIDER_COSTS.gemini + PROVIDER_COSTS.stability);
+        } else {
+            totalCost = iterations * (PROVIDER_COSTS[selectedProvider] || 0);
+        }
+        
+        batchPreview.textContent = `${iterations} immagini`;
+        costEstimate.textContent = `💰 Costo stimato: $${totalCost.toFixed(2)}`;
     }
 
     function setupPresetButtons() {
@@ -256,6 +262,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
+     * Torna alla pagina di conferma
+     */
+    function goBack() {
+        window.location.href = 'confirm.html';
+    }
+
+    }
+    }
+
+    /**
      * Genera batch di immagini
      */
     async function generateBatch(sessionId, prompt, selectedProvider) {
@@ -322,9 +338,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (status === 'completed') {
                         clearInterval(pollInterval);
-                        // Imposta flag per batch e vai alla pagina dei risultati batch
-                        sessionStorage.setItem('generationType', 'batch');
-                        window.location.href = 'batch-result.html';
+                        // Vai alla pagina dei risultati
+                        window.location.href = 'result.html';
                     } else if (status === 'error') {
                         clearInterval(pollInterval);
                         showError('Errore durante la batch generation');
@@ -346,13 +361,6 @@ document.addEventListener('DOMContentLoaded', function() {
             hideLoader();
             generateBtn.style.display = 'block';
         }, 30 * 60 * 1000);
-    }
-
-    /**
-     * Torna alla pagina di conferma
-     */
-    function goBack() {
-        window.location.href = 'confirm.html';
     }
 
     /**
@@ -385,91 +393,77 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Avvia polling per i risultati progressivi
+     * Avvia il polling per risultati progressivi
      */
     function startProgressPolling(sessionId, selectedProvider) {
         const pollInterval = setInterval(async () => {
             try {
-                const response = await fetch(`/api/result/${sessionId}`);
-                const data = await response.json();
+                const response = await fetch(`/api/progress/${sessionId}`);
+                const progressData = await response.json();
 
-                if (response.ok) {
-                    const { status, progress, isComplete } = data;
-                    
-                    updateLoaderProgress(progress, selectedProvider);
-
-                    if (isComplete || status === 'completed') {
-                        clearInterval(pollInterval);
-                        // Vai alla pagina dei risultati
-                        window.location.href = 'result.html';
-                    } else if (status === 'error') {
-                        clearInterval(pollInterval);
-                        showError('Errore durante la generazione');
-                        hideLoader();
-                        generateBtn.style.display = 'block';
-                    }
-                } else {
-                    console.error('Errore polling risultati:', data.error);
+                if (progressData.status === 'completed' || progressData.isComplete) {
+                    clearInterval(pollInterval);
+                    // Vai alla pagina risultato quando completato
+                    window.location.href = 'result.html';
+                    return;
                 }
+
+                // Aggiorna il messaggio del loader con i progressi
+                updateLoaderProgress(progressData.progress, selectedProvider);
+
             } catch (error) {
-                console.error('Errore richiesta polling:', error);
+                console.error('Errore polling:', error);
+                // Continua il polling anche in caso di errore temporaneo
             }
-        }, 2000); // Poll ogni 2 secondi
+        }, 1000); // Polling ogni secondo
 
         // Timeout di sicurezza (5 minuti)
         setTimeout(() => {
             clearInterval(pollInterval);
-            showError('Timeout generazione - Controlla i risultati manualmente');
-            hideLoader();
-            generateBtn.style.display = 'block';
-        }, 5 * 60 * 1000);
+            if (document.querySelector('#loader:not(.hidden)')) {
+                // Se il loader è ancora visibile, vai alla pagina risultato
+                window.location.href = 'result.html';
+            }
+        }, 300000); // 5 minuti
     }
 
+    /**
+     * Aggiorna il messaggio del loader con i progressi
+     */
     function updateLoaderProgress(progress, selectedProvider) {
         const loaderText = document.querySelector('#loader p');
-        
-        if (!progress) return;
+        if (!loaderText) return;
 
-        let progressMessages = [];
-        
-        // Controllo dello stato di ogni provider
         if (selectedProvider === 'both') {
             const providers = ['gemini', 'openai', 'stability', 'comfyui'];
-            providers.forEach(provider => {
-                if (progress[provider]) {
-                    const status = progress[provider];
-                    const name = getProviderName(provider);
-                    if (status === 'generating') {
-                        progressMessages.push(`${name}: In corso...`);
-                    } else if (status === 'completed') {
-                        progressMessages.push(`${name}: ✅ Completato`);
-                    } else if (status === 'error') {
-                        progressMessages.push(`${name}: ❌ Errore`);
-                    }
-                }
-            });
+            const completed = providers.filter(p => progress[p] === 'completed').length;
+            const total = providers.length;
+            
+            if (completed > 0) {
+                loaderText.textContent = `Generazione in corso... (${completed}/${total} completati)`;
+            }
         } else {
             const status = progress[selectedProvider];
-            const name = getProviderName(selectedProvider);
             if (status === 'generating') {
-                progressMessages.push(`${name}: Generazione in corso...`);
+                loaderText.textContent = `Generazione con ${getProviderName(selectedProvider)} in corso...`;
             } else if (status === 'completed') {
-                progressMessages.push(`${name}: Completato con successo!`);
+                loaderText.textContent = `${getProviderName(selectedProvider)} completato!`;
+            } else if (status === 'error') {
+                loaderText.textContent = `Errore con ${getProviderName(selectedProvider)}, caricamento risultati...`;
             }
-        }
-
-        if (progressMessages.length > 0) {
-            loaderText.textContent = progressMessages.join(' | ');
         }
     }
 
+    /**
+     * Ottieni il nome del provider per visualizzazione
+     */
     function getProviderName(provider) {
-        const names = {
-            'gemini': 'Gemini',
-            'openai': 'OpenAI',
-            'stability': 'Stability AI',
-            'comfyui': 'ComfyUI'
-        };
-        return names[provider] || provider;
+        switch (provider) {
+            case 'gemini': return 'Gemini';
+            case 'openai': return 'OpenAI GPT Image 1';
+            case 'stability': return 'Stability AI';
+            case 'comfyui': return 'ComfyUI';
+            default: return provider;
+        }
     }
 });

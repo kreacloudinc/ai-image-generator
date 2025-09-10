@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore Immagini AI - Risultati Batch</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Generatore Immagini AI</h1>
+            <p>🔄 Risultati Batch Generation</p>
+        </header>
+
+        <main class="batch-results-section">
+            <!-- Loader iniziale -->
+            <div id="batchLoader" class="loader">
+                <div class="spinner"></div>
+                <p id="batchLoaderText">Caricamento risultati batch...</p>
+                <div class="batch-progress-info">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+                    </div>
+                    <p id="progressText">Preparazione in corso...</p>
+                </div>
+            </div>
+
+            <!-- Contenuto principale -->
+            <div id="batchResultContent" class="batch-result-content hidden">
+                
+                <!-- Summary section -->
+                <div class="batch-summary">
+                    <h2>📊 Riepilogo Batch Generation</h2>
+                    <div class="summary-stats">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalIterations">0</div>
+                            <div class="stat-label">Iterazioni Totali</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="successfulIterations">0</div>
+                            <div class="stat-label">Completate</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="failedIterations">0</div>
+                            <div class="stat-label">Fallite</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalCost">$0.00</div>
+                            <div class="stat-label">Costo Totale</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prompt utilizzato -->
+                <div class="prompt-details">
+                    <h3>📝 Prompt Base:</h3>
+                    <p id="usedPrompt" class="prompt-text"></p>
+                    <p id="providerUsed" class="provider-info"></p>
+                </div>
+
+                <!-- Filtri e controlli -->
+                <div class="batch-controls">
+                    <div class="view-controls">
+                        <button class="view-btn active" data-view="grid">🔳 Griglia</button>
+                        <button class="view-btn" data-view="list">📋 Lista</button>
+                        <button class="view-btn" data-view="comparison">⚖️ Confronto</button>
+                    </div>
+                    <div class="filter-controls">
+                        <select id="providerFilter">
+                            <option value="all">Tutti i Provider</option>
+                            <option value="gemini">Gemini</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="stability">Stability AI</option>
+                            <option value="comfyui">ComfyUI</option>
+                        </select>
+                        <select id="statusFilter">
+                            <option value="all">Tutti i Risultati</option>
+                            <option value="success">Solo Successi</option>
+                            <option value="error">Solo Errori</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Grid view (default) -->
+                <div id="gridView" class="results-grid">
+                    <div id="batchResults" class="batch-results-grid">
+                        <!-- Le iterazioni verranno inserite dinamicamente qui -->
+                    </div>
+                </div>
+
+                <!-- List view -->
+                <div id="listView" class="results-list hidden">
+                    <div id="batchResultsList" class="batch-results-list">
+                        <!-- Lista dettagliata verranno inserite dinamicamente qui -->
+                    </div>
+                </div>
+
+                <!-- Comparison view -->
+                <div id="comparisonView" class="results-comparison hidden">
+                    <div class="comparison-selector">
+                        <h3>Seleziona iterazioni da confrontare:</h3>
+                        <div id="comparisonSelector" class="comparison-checkboxes">
+                            <!-- Checkboxes per selezione confronto -->
+                        </div>
+                    </div>
+                    <div id="comparisonResults" class="comparison-results">
+                        <!-- Confronto side-by-side -->
+                    </div>
+                </div>
+
+                <!-- Azioni finali -->
+                <div class="final-actions">
+                    <button id="downloadAllBtn" class="btn btn-primary">
+                        📥 Scarica Tutte le Immagini
+                    </button>
+                    <button id="newBatchBtn" class="btn btn-secondary">
+                        🔄 Nuova Batch Generation
+                    </button>
+                    <button id="backToUploadBtn" class="btn btn-outline">
+                        ← Torna all'Upload
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sezione errore -->
+            <div class="error-section" id="batchErrorSection" style="display: none;">
+                <div class="error-card">
+                    <h3>❌ Errore nel Caricamento</h3>
+                    <p id="batchErrorMessage">Si è verificato un errore durante il caricamento dei risultati</p>
+                    <button id="retryBatchBtn" class="btn btn-secondary">🔄 Riprova</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="batch-result.js"></script>
+</body>
+</html>

@@ -11,12 +11,13 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
-# Uploads directory (user images)
-uploads/*.png
-uploads/*.jpg
-uploads/*.jpeg
-uploads/*.gif
-uploads/*.webp
+# Uploads directory (user images) - Ignore all files
+uploads/*
+!uploads/.gitkeep
+
+# Generated images directory - Ignore all files  
+generated/*
+!generated/.gitkeep
 
 # ComfyUI - Ignore models and outputs but keep structure
 ComfyUI/models/checkpoints/*.safetensors
@@ -31,9 +32,6 @@ ComfyUI/input/*.jpg
 ComfyUI/temp/
 ComfyUI/__pycache__/
 ComfyUI/.git/
-
-# Keep uploads directory but ignore images
-!uploads/.gitkeep
 
 # OS generated files
 .DS_Store
