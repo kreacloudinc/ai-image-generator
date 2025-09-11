@@ -544,15 +544,15 @@ async function generateSingleIteration(sessionId, basePrompt, provider, iteratio
       timestamp: Date.now()
     };
 
-    // Lista dei provider da utilizzare - SOLO GEMINI per batch
+    // Lista dei provider da utilizzare - TUTTI I PROVIDER supportati per batch
     const providers = [];
     if (provider === 'both') {
-      providers.push('gemini'); // Solo Gemini per i batch
-    } else if (provider === 'gemini') {
-      providers.push('gemini');
+      providers.push('gemini', 'openai'); // Multi-provider per batch
+    } else if (provider === 'all') {
+      providers.push('gemini', 'openai', 'stability', 'comfyui'); // Tutti i provider
     } else {
-      // Per altri provider, fallback a Gemini nei batch
-      providers.push('gemini');
+      // Provider specifico richiesto
+      providers.push(provider);
     }
 
     console.log(`🔄 Iterazione ${iteration}`);
@@ -590,13 +590,16 @@ async function generateSingleIteration(sessionId, basePrompt, provider, iteratio
               { basePrompt, iteration: iteration });
             break;
           case 'openai':
-            result = await generateWithOpenAI(iterationPrompt, sessionData[sessionId].imagePath);
+            result = await generateWithOpenAI(iterationPrompt, sessionData[sessionId].imagePath, 
+              { basePrompt, iteration: iteration });
             break;
           case 'stability':
-            result = await generateWithStabilityAI(iterationPrompt);
+            result = await generateWithStabilityAI(iterationPrompt, 
+              { basePrompt, iteration: iteration });
             break;
           case 'comfyui':
-            result = await generateWithComfyUI(iterationPrompt, sessionData[sessionId].imagePath);
+            result = await generateWithComfyUI(iterationPrompt, sessionData[sessionId].imagePath, 
+              { basePrompt, iteration: iteration });
             break;
         }
         
@@ -1052,11 +1055,13 @@ EXECUTE IMAGE GENERATION NOW.`;
 /**
  * Genera immagine usando OpenAI GPT Image 1
  */
-async function generateWithOpenAI(prompt, originalImagePath) {
+async function generateWithOpenAI(prompt, originalImagePath, batchInfo = null) {
   try {
+    console.log('🚀 DEBUG: generateWithOpenAI chiamata - prompt:', prompt, 'originalImagePath:', originalImagePath);
+    
     // Controlla se OpenAI è abilitato
     if (!OPENAI_ENABLED) {
-      console.log('⚠️  OpenAI disabilitato per test');
+      console.log('⚠️  OpenAI disabilitato per test - OPENAI_ENABLED:', OPENAI_ENABLED);
       return {
         success: false,
         error: 'OpenAI temporaneamente disabilitato. Configura una chiave API valida per abilitarlo.',
@@ -1099,29 +1104,83 @@ async function generateWithOpenAI(prompt, originalImagePath) {
       quality: "high"
     });
     
+    console.log('✅ OpenAI API chiamata completata! Response keys:', Object.keys(response));
+    
     const processingTime = Date.now() - startTime;
     
-    // Salva l'immagine generata localmente (da URL)
+    // Debug: Logga la struttura della risposta OpenAI
+    console.log('🔍 Debug OpenAI response structure:', JSON.stringify(response, null, 2));
+    
+    // Calcolo del costo basato sui token se disponibili
+    let actualCost = 0;
+    if (response.usage) {
+        // Prezzi per gpt-image-1 (verifica i prezzi attuali OpenAI)
+        const inputTokenPrice = 0.000002; // $0.002 per 1K input tokens
+        const outputTokenPrice = 0.000008; // $0.008 per 1K output tokens
+        
+        const inputCost = (response.usage.input_tokens / 1000) * inputTokenPrice;
+        const outputCost = (response.usage.output_tokens / 1000) * outputTokenPrice;
+        actualCost = inputCost + outputCost;
+        
+        console.log(`💰 OpenAI Cost Calculation:
+            Input tokens: ${response.usage.input_tokens} × $${inputTokenPrice}/1K = $${inputCost.toFixed(6)}
+            Output tokens: ${response.usage.output_tokens} × $${outputTokenPrice}/1K = $${outputCost.toFixed(6)}
+            Total cost: $${actualCost.toFixed(6)}`);
+    }
+    
+    // Salva l'immagine generata localmente
     let savedImagePath = null;
+    let generatedImageUrl = null;
     try {
-      const imageResponse = await fetch(response.data[0].url);
-      const arrayBuffer = await imageResponse.arrayBuffer();
-      const imageBuffer = Buffer.from(arrayBuffer);
+      console.log('🔍 OpenAI Response data array length:', response.data?.length);
+      console.log('🔍 First image object keys:', response.data[0] ? Object.keys(response.data[0]) : 'none');
+      
       const timestamp = Date.now();
       const randomId = Math.floor(Math.random() * 1000000000);
-      const filename = `openai-${timestamp}-${randomId}.png`;
+      
+      // Usa nome descrittivo se è una batch generation
+      let filename;
+      if (batchInfo) {
+        filename = createDescriptiveFilename('openai', batchInfo.basePrompt, batchInfo.iteration, timestamp, randomId);
+      } else {
+        filename = `openai-${timestamp}-${randomId}.png`;
+      }
+      
       const filepath = path.join(__dirname, 'generated', filename);
       
-      fs.writeFileSync(filepath, imageBuffer);
+      // Gestisci sia URL che dati base64
+      if (response.data[0].url) {
+        // Caso URL (vecchio comportamento)
+        console.log('🔗 Utilizzando URL OpenAI:', response.data[0].url);
+        generatedImageUrl = response.data[0].url;
+        const imageResponse = await fetch(response.data[0].url);
+        const arrayBuffer = await imageResponse.arrayBuffer();
+        const imageBuffer = Buffer.from(arrayBuffer);
+        fs.writeFileSync(filepath, imageBuffer);
+      } else if (response.data[0].b64_json) {
+        // Caso base64 (nuovo comportamento)
+        console.log('📊 Utilizzando dati base64 OpenAI (lunghezza:', response.data[0].b64_json.length, 'caratteri)');
+        const imageBuffer = Buffer.from(response.data[0].b64_json, 'base64');
+        fs.writeFileSync(filepath, imageBuffer);
+        generatedImageUrl = `data:image/png;base64,${response.data[0].b64_json}`;
+      } else {
+        throw new Error('Nessun URL o dati base64 disponibili nella risposta OpenAI');
+      }
+      
       savedImagePath = `/generated/${filename}`;
       console.log('💾 Immagine OpenAI salvata:', filename);
     } catch (saveError) {
       console.error('⚠️ Errore salvataggio immagine OpenAI:', saveError.message);
     }
     
-    // Calcola costi OpenAI GPT Image 1 (varia con le dimensioni)
-    const isLargeFormat = imageSize !== "1024x1024";
-    const gptImage1Cost = isLargeFormat ? 0.080 : 0.040; // $0.08 per formati grandi, $0.04 per 1024x1024
+    // Calcola costi OpenAI GPT Image 1 - usa i token reali se disponibili
+    let finalCost = actualCost;
+    if (actualCost === 0) {
+        // Fallback al costo fisso se i token non sono disponibili
+        const isLargeFormat = imageSize !== "1024x1024";
+        finalCost = isLargeFormat ? 0.080 : 0.040; // $0.08 per formati grandi, $0.04 per 1024x1024
+        console.log(`⚠️ Usando costo fisso: $${finalCost} (formato: ${imageSize})`);
+    }
     
     console.log('✅ Generazione OpenAI completata');
 
@@ -1129,21 +1188,21 @@ async function generateWithOpenAI(prompt, originalImagePath) {
       provider: 'openai',
       success: true,
       type: 'image', // OpenAI genera immagine reale
-      generatedImageUrl: response.data[0].url,
+      generatedImageUrl: generatedImageUrl,
       savedImagePath: savedImagePath, // Path locale dell'immagine salvata
       originalImagePath: `/uploads/${originalImagePath}`,
       prompt: prompt,
       optimizedPrompt: optimizedPrompt,
       aiDescription: `Immagine generata da OpenAI GPT Image 1 basata sul prompt: "${prompt}"`,
       tokens: {
-        input: null, // GPT Image 1 non usa token standard
-        output: null,
-        total: null
+        input: response.usage ? response.usage.input_tokens : null,
+        output: response.usage ? response.usage.output_tokens : null,
+        total: response.usage ? response.usage.total_tokens : null
       },
       cost: {
-        input: 0,
-        output: gptImage1Cost,
-        total: gptImage1Cost,
+        input: response.usage ? (response.usage.input_tokens / 1000) * 0.000002 : 0,
+        output: response.usage ? (response.usage.output_tokens / 1000) * 0.000008 : finalCost,
+        total: finalCost,
         currency: 'USD'
       },
       generatedAt: new Date().toISOString(),
@@ -1173,7 +1232,7 @@ async function generateWithOpenAI(prompt, originalImagePath) {
 /**
  * Genera immagine usando Stability AI
  */
-async function generateWithStabilityAI(prompt) {
+async function generateWithStabilityAI(prompt, batchInfo = null) {
   try {
     console.log('⚡ Generazione immagine con Stability AI...');
     console.log('🔑 API Key disponibile:', STABILITY_API_KEY ? 'SÌ' : 'NO');
@@ -1210,7 +1269,15 @@ async function generateWithStabilityAI(prompt) {
       // Genera nome file unico
       const timestamp = Date.now();
       const randomNum = Math.floor(Math.random() * 1000000000);
-      const filename = `stability-${timestamp}-${randomNum}.png`;
+      
+      // Usa nome descrittivo se è una batch generation
+      let filename;
+      if (batchInfo) {
+        filename = createDescriptiveFilename('stability', batchInfo.basePrompt, batchInfo.iteration, timestamp, randomNum);
+      } else {
+        filename = `stability-${timestamp}-${randomNum}.png`;
+      }
+      
       const filepath = path.join(generatedDir, filename);
       
       // Salva l'immagine
@@ -1252,7 +1319,7 @@ async function generateWithStabilityAI(prompt) {
 /**
  * Genera immagine usando ComfyUI con Stable Diffusion 3.5 Large Turbo
  */
-async function generateWithComfyUI(prompt, inputImagePath = null) {
+async function generateWithComfyUI(prompt, inputImagePath = null, batchInfo = null) {
   try {
     console.log('🎨 Generazione immagine con ComfyUI SD 3.5 Large Turbo...');
     console.log('🖼️ Immagine input:', inputImagePath || 'Text-to-Image');
@@ -1435,7 +1502,15 @@ async function generateWithComfyUI(prompt, inputImagePath = null) {
               // Salva l'immagine localmente
               const timestamp = Date.now();
               const randomId = Math.floor(Math.random() * 1000000000);
-              const filename = `comfyui-${timestamp}-${randomId}.png`;
+              
+              // Usa nome descrittivo se è una batch generation
+              let filename;
+              if (batchInfo) {
+                filename = createDescriptiveFilename('comfyui', batchInfo.basePrompt, batchInfo.iteration, timestamp, randomId);
+              } else {
+                filename = `comfyui-${timestamp}-${randomId}.png`;
+              }
+              
               const filepath = path.join(generatedDir, filename);
               
               fs.writeFileSync(filepath, imageResponse.data);

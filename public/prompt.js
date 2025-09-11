@@ -86,11 +86,42 @@ document.addEventListener('DOMContentLoaded', function() {
         const iterations = parseInt(iterationsNumber.value) || 10;
         const selectedProvider = document.querySelector('input[name="provider"]:checked').value;
         
-        // I batch usano SOLO Gemini
-        const geminiCost = iterations * PROVIDER_COSTS.gemini;
+        // Calcola costo basato sul provider selezionato
+        let cost = 0;
+        let providerName = '';
         
-        batchPreview.textContent = `${iterations} immagini con Gemini`;
-        costEstimate.textContent = `💰 Costo stimato: $${geminiCost.toFixed(2)} (solo Gemini)`;
+        switch(selectedProvider) {
+            case 'both':
+                cost = iterations * (PROVIDER_COSTS.gemini + PROVIDER_COSTS.openai);
+                providerName = 'Gemini + OpenAI';
+                break;
+            case 'all':
+                cost = iterations * (PROVIDER_COSTS.gemini + PROVIDER_COSTS.openai + PROVIDER_COSTS.stability + PROVIDER_COSTS.comfyui);
+                providerName = 'Tutti i provider';
+                break;
+            case 'gemini':
+                cost = iterations * PROVIDER_COSTS.gemini;
+                providerName = 'Gemini';
+                break;
+            case 'openai':
+                cost = iterations * PROVIDER_COSTS.openai;
+                providerName = 'OpenAI';
+                break;
+            case 'stability':
+                cost = iterations * PROVIDER_COSTS.stability;
+                providerName = 'Stability AI';
+                break;
+            case 'comfyui':
+                cost = iterations * PROVIDER_COSTS.comfyui;
+                providerName = 'ComfyUI (locale)';
+                break;
+            default:
+                cost = iterations * PROVIDER_COSTS.gemini;
+                providerName = 'Gemini';
+        }
+        
+        batchPreview.textContent = `${iterations} immagini con ${providerName}`;
+        costEstimate.textContent = `💰 Costo stimato: $${cost.toFixed(3)}`;
     }
 
     function setupPresetButtons() {
