@@ -437,7 +437,7 @@ async function generateImagesAsync(sessionId, prompt, provider) {
 
 // Funzione asincrona per batch generation con supporto parallelo
 async function generateBatchAsync(sessionId, basePrompt, provider, iterations) {
-  const PARALLEL_BATCH_SIZE = 10; // Genera 10 immagini in parallelo
+  const PARALLEL_BATCH_SIZE = 100; // Genera 100 immagini in parallelo simultanee
   
   try {
     console.log(`🔄 Batch generation avviata: ${iterations} iterazioni`);
@@ -453,7 +453,12 @@ async function generateBatchAsync(sessionId, basePrompt, provider, iterations) {
       batches.push({ start, end });
     }
 
-    console.log(`📦 Suddiviso in ${batches.length} batch paralleli di max ${PARALLEL_BATCH_SIZE} iterazioni`);
+    console.log(`📦 Suddiviso in ${batches.length} batch paralleli di max ${PARALLEL_BATCH_SIZE} iterazioni (supporto 100 simultanee)`);
+
+    // Per batch di 100 o meno, tutto viene eseguito in parallelo
+    if (iterations <= 100) {
+      console.log(`🚀 MODALITÀ ULTRA-VELOCE: Tutte le ${iterations} iterazioni verranno elaborate simultaneamente!`);
+    }
 
     // Elabora ogni batch in parallelo
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
@@ -504,10 +509,12 @@ async function generateBatchAsync(sessionId, basePrompt, provider, iterations) {
         }
       }
       
-      // Piccola pausa tra batch per evitare rate limiting
+      // Pausa intelligente tra batch per evitare rate limiting
       if (batchIndex < batches.length - 1) {
-        console.log(`⏳ Pausa di 3 secondi prima del prossimo batch...`);
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Pausa più breve per batch più piccoli, nessuna pausa se tutto in un batch
+        const pauseTime = iterations <= 100 ? 1000 : 2000; // 1s per batch ≤100, 2s per batch più grandi
+        console.log(`⏳ Pausa di ${pauseTime/1000}s prima del prossimo batch...`);
+        await new Promise(resolve => setTimeout(resolve, pauseTime));
       }
     }
 
