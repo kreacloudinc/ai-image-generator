@@ -19,19 +19,7 @@ uploads/*
 generated/*
 !generated/.gitkeep
 
-# ComfyUI - Ignore models and outputs but keep structure
-ComfyUI/models/checkpoints/*.safetensors
-ComfyUI/models/checkpoints/*.ckpt
-ComfyUI/models/checkpoints/*.pth
-ComfyUI/models/vae/*.safetensors
-ComfyUI/models/vae/*.ckpt
-ComfyUI/output/*.png
-ComfyUI/output/*.jpg
-ComfyUI/input/*.png
-ComfyUI/input/*.jpg
-ComfyUI/temp/
-ComfyUI/__pycache__/
-ComfyUI/.git/
+
 
 # OS generated files
 .DS_Store

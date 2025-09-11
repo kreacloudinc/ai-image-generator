@@ -39,13 +39,7 @@ if (!STABILITY_ENABLED) {
     console.warn('⚠️  Stability API Key non trovata - Stability AI disabilitato');
 }
 
-// Configurazione ComfyUI
-const COMFYUI_URL = process.env.COMFYUI_URL || 'http://127.0.0.1:8188';
-const COMFYUI_ENABLED = true; // ComfyUI locale sempre abilitato se accessibile
 
-if (COMFYUI_ENABLED) {
-    console.log('🎨 ComfyUI configurato su:', COMFYUI_URL);
-}
 
 // Middleware
 app.use(cors());
@@ -376,7 +370,7 @@ async function generateImagesAsync(sessionId, prompt, provider) {
     // Lista dei provider da utilizzare
     const providers = [];
     if (provider === 'both') {
-      providers.push('gemini', 'openai', 'stability', 'comfyui');
+      providers.push('gemini', 'openai', 'stability');
     } else {
       providers.push(provider);
     }
@@ -399,10 +393,6 @@ async function generateImagesAsync(sessionId, prompt, provider) {
           case 'stability':
             console.log('⚡ Generando con Stability AI...');
             result = await generateWithStabilityAI(prompt);
-            break;
-          case 'comfyui':
-            console.log('🎨 Generando con ComfyUI...');
-            result = await generateWithComfyUI(prompt, sessionData[sessionId].imagePath);
             break;
         }
         
@@ -556,7 +546,7 @@ async function generateSingleIteration(sessionId, basePrompt, provider, iteratio
     if (provider === 'both') {
       providers.push('gemini', 'openai'); // Multi-provider per batch
     } else if (provider === 'all') {
-      providers.push('gemini', 'openai', 'stability', 'comfyui'); // Tutti i provider
+      providers.push('gemini', 'openai', 'stability'); // Tutti i provider
     } else {
       // Provider specifico richiesto
       providers.push(provider);
@@ -583,6 +573,15 @@ async function generateSingleIteration(sessionId, basePrompt, provider, iteratio
       } catch (error) {
         console.log(`👗 Avatar Outfit ${iteration}: fallback variation`);
       }
+    } else if (basePrompt.toLowerCase().includes('vintage')) {
+      try {
+        const vintageData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/vintage-outfits.json'), 'utf8'));
+        const sequentialIndex = (iteration - 1) % vintageData.vintage_outfits.length;
+        const selectedOutfit = vintageData.vintage_outfits[sequentialIndex];
+        console.log(`👗 Vintage Outfit ${iteration}: ${selectedOutfit.substring(0, 50)}...`);
+      } catch (error) {
+        console.log(`👗 Vintage Outfit ${iteration}: fallback variation`);
+      }
     }
 
     // Genera per ogni provider
@@ -602,10 +601,6 @@ async function generateSingleIteration(sessionId, basePrompt, provider, iteratio
             break;
           case 'stability':
             result = await generateWithStabilityAI(iterationPrompt, 
-              { basePrompt, iteration: iteration });
-            break;
-          case 'comfyui':
-            result = await generateWithComfyUI(iterationPrompt, sessionData[sessionId].imagePath, 
               { basePrompt, iteration: iteration });
             break;
         }
@@ -632,6 +627,7 @@ function varyPrompt(basePrompt, iteration) {
   // Riconoscimento tipo di prompt
   const isAvatar = basePrompt.toLowerCase().includes('avatar') || basePrompt.toLowerCase().includes('full-body avatar');
   const isHistorical = basePrompt.toLowerCase().includes('historical') || basePrompt.toLowerCase().includes('historical figure');
+  const isVintage = basePrompt.toLowerCase().includes('vintage outfit') || basePrompt.toLowerCase().includes('vintage');
   
   if (isAvatar) {
     // Carica outfit in sequenza dal file JSON
@@ -649,6 +645,22 @@ function varyPrompt(basePrompt, iteration) {
       const variation = variations[(iteration - 1) % variations.length];
       return `${basePrompt.replace('Modern style', variation)}`;
     }
+  } else if (isVintage) {
+    // Carica outfit vintage in sequenza dal file JSON
+    try {
+      const vintageData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/vintage-outfits.json'), 'utf8'));
+      // Usa iterazione per selezionare in sequenza (no random)
+      const sequentialIndex = (iteration - 1) % vintageData.vintage_outfits.length;
+      const selectedOutfit = vintageData.vintage_outfits[sequentialIndex];
+      console.log(`👗 Vintage Outfit ${iteration}: ${selectedOutfit.substring(0, 50)}...`);
+      return `${basePrompt.replace('dress in elegant vintage clothing', `dress in ${selectedOutfit}`)}`;
+    } catch (error) {
+      console.error('Errore nel leggere vintage-outfits.json:', error.message);
+      // Fallback alle variazioni semplici
+      const variations = ['1920s flapper dress', '1950s pin-up style', 'Victorian gown', '1960s mod outfit', '1970s bohemian look'];
+      const variation = variations[(iteration - 1) % variations.length];
+      return `${basePrompt.replace('dress in elegant vintage clothing', `dress in ${variation}`)}`;
+    }
   } else if (isHistorical) {
     // Carica personaggi storici in sequenza dal file JSON
     try {
@@ -664,6 +676,22 @@ function varyPrompt(basePrompt, iteration) {
       const variations = ['Roman era', 'Medieval', 'Renaissance', 'Victorian', 'Ancient Egypt'];
       const variation = variations[(iteration - 1) % variations.length];
       return `${basePrompt.replace('any era', variation)}`;
+    }
+  } else if (isVintage) {
+    // Carica outfit vintage in sequenza dal file JSON
+    try {
+      const vintageData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/vintage-outfits.json'), 'utf8'));
+      // Usa iterazione per selezionare in sequenza (no random)
+      const sequentialIndex = (iteration - 1) % vintageData.vintage_outfits.length;
+      const selectedOutfit = vintageData.vintage_outfits[sequentialIndex];
+      console.log(`👗 Vintage Outfit ${iteration}: ${selectedOutfit.substring(0, 50)}...`);
+      return `${basePrompt.replace('dress in elegant vintage clothing', `dress in ${selectedOutfit}`)}`;
+    } catch (error) {
+      console.error('Errore nel leggere vintage-outfits.json:', error.message);
+      // Fallback alle variazioni semplici
+      const variations = ['1920s flapper dress', '1950s pin-up style', 'Victorian gown', '1960s mod outfit', '1970s bohemian look'];
+      const variation = variations[(iteration - 1) % variations.length];
+      return `${basePrompt.replace('dress in elegant vintage clothing', `dress in ${variation}`)}`;
     }
   } else {
     // Variazioni brevi generiche
@@ -695,6 +723,7 @@ function varyPrompt(basePrompt, iteration) {
 function createDescriptiveFilename(basePrompt, iteration, provider, extension = 'png') {
   const isAvatar = basePrompt.toLowerCase().includes('avatar') || basePrompt.toLowerCase().includes('full-body avatar');
   const isHistorical = basePrompt.toLowerCase().includes('historical') || basePrompt.toLowerCase().includes('historical figure');
+  const isVintage = basePrompt.toLowerCase().includes('vintage outfit') || basePrompt.toLowerCase().includes('vintage');
   
   let description = '';
   
@@ -717,6 +746,25 @@ function createDescriptiveFilename(basePrompt, iteration, provider, extension = 
     } catch (error) {
       description = `avatar-${iteration}-outfit${((iteration - 1) % 5) + 1}`;
     }
+  } else if (isVintage) {
+    // Ottieni la descrizione dell'outfit vintage
+    try {
+      const vintageData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/vintage-outfits.json'), 'utf8'));
+      const sequentialIndex = (iteration - 1) % vintageData.vintage_outfits.length;
+      const selectedOutfit = vintageData.vintage_outfits[sequentialIndex];
+      
+      // Pulisci e accorcia la descrizione per il filename
+      description = selectedOutfit.substring(0, 50)
+        .replace(/[^a-zA-Z0-9\s-]/g, '') // Rimuovi caratteri speciali
+        .replace(/\s+/g, '-') // Sostituisci spazi con trattini
+        .toLowerCase()
+        .replace(/-+/g, '-') // Rimuovi trattini multipli
+        .replace(/^-|-$/g, ''); // Rimuovi trattini all'inizio/fine
+      
+      description = `vintage-${iteration}-${description}`;
+    } catch (error) {
+      description = `vintage-${iteration}-outfit${((iteration - 1) % 5) + 1}`;
+    }
   } else if (isHistorical) {
     // Ottieni la descrizione del personaggio storico
     try {
@@ -735,6 +783,25 @@ function createDescriptiveFilename(basePrompt, iteration, provider, extension = 
       description = `historical-${iteration}-${description}`;
     } catch (error) {
       description = `historical-${iteration}-character${((iteration - 1) % 5) + 1}`;
+    }
+  } else if (isVintage) {
+    // Ottieni la descrizione dell'outfit vintage
+    try {
+      const vintageData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/vintage-outfits.json'), 'utf8'));
+      const sequentialIndex = (iteration - 1) % vintageData.vintage_outfits.length;
+      const selectedOutfit = vintageData.vintage_outfits[sequentialIndex];
+      
+      // Pulisci e accorcia la descrizione per il filename
+      description = selectedOutfit.substring(0, 50)
+        .replace(/[^a-zA-Z0-9\s-]/g, '') // Rimuovi caratteri speciali
+        .replace(/\s+/g, '-') // Sostituisci spazi con trattini
+        .toLowerCase()
+        .replace(/-+/g, '-') // Rimuovi trattini multipli
+        .replace(/^-|-$/g, ''); // Rimuovi trattini all'inizio/fine
+      
+      description = `vintage-${iteration}-${description}`;
+    } catch (error) {
+      description = `vintage-${iteration}-outfit${((iteration - 1) % 5) + 1}`;
     }
   } else {
     // Per altri tipi di prompt, usa una descrizione generica
@@ -1323,271 +1390,6 @@ async function generateWithStabilityAI(prompt, batchInfo = null) {
   }
 }
 
-/**
- * Genera immagine usando ComfyUI con Stable Diffusion 3.5 Large Turbo
- */
-async function generateWithComfyUI(prompt, inputImagePath = null, batchInfo = null) {
-  try {
-    console.log('🎨 Generazione immagine con ComfyUI SD 3.5 Large Turbo...');
-    console.log('🖼️ Immagine input:', inputImagePath || 'Text-to-Image');
-    
-    const startTime = Date.now();
-    
-    // Workflow JSON corretto per SDXL
-    const workflow = {
-      "1": {
-        "inputs": {
-          "ckpt_name": "sd_xl_base_1.0.safetensors"
-        },
-        "class_type": "CheckpointLoaderSimple",
-        "_meta": {
-          "title": "Load Checkpoint"
-        }
-      },
-      "2": {
-        "inputs": {
-          "text": prompt,
-          "clip": ["1", 1]
-        },
-        "class_type": "CLIPTextEncode",
-        "_meta": {
-          "title": "CLIP Text Encode (Prompt)"
-        }
-      },
-      "3": {
-        "inputs": {
-          "text": "low quality, blurry, distorted, watermark, text, signature",
-          "clip": ["1", 1]
-        },
-        "class_type": "CLIPTextEncode",
-        "_meta": {
-          "title": "CLIP Text Encode (Negative)"
-        }
-      },
-      "4": {
-        "inputs": {
-          "width": 1024,
-          "height": 1024,
-          "batch_size": 1
-        },
-        "class_type": "EmptyLatentImage",
-        "_meta": {
-          "title": "Empty Latent Image"
-        }
-      },
-      "5": {
-        "inputs": {
-          "seed": Math.floor(Math.random() * 1000000),
-          "steps": 25,
-          "cfg": 8.0,
-          "sampler_name": "euler",
-          "scheduler": "normal",
-          "denoise": inputImagePath ? 0.75 : 1.0,
-          "model": ["1", 0],
-          "positive": ["2", 0],
-          "negative": ["3", 0],
-          "latent_image": inputImagePath ? ["13", 0] : ["4", 0]
-        },
-        "class_type": "KSampler",
-        "_meta": {
-          "title": "KSampler"
-        }
-      },
-      "6": {
-        "inputs": {
-          "samples": ["5", 0],
-          "vae": ["1", 2]
-        },
-        "class_type": "VAEDecode",
-        "_meta": {
-          "title": "VAE Decode"
-        }
-      },
-      "7": {
-        "inputs": {
-          "filename_prefix": "ComfyUI_SDXL",
-          "images": ["6", 0]
-        },
-        "class_type": "SaveImage",
-        "_meta": {
-          "title": "Save Image"
-        }
-      }
-    };
-
-    // Se abbiamo un'immagine di input, aggiungiamo i nodi per image-to-image
-    if (inputImagePath) {
-      // ComfyUI si aspetta solo il nome del file, non il path completo
-      const imageName = path.basename(inputImagePath);
-      
-      // Copia l'immagine nella cartella input di ComfyUI
-      const comfyInputPath = path.join(__dirname, 'ComfyUI', 'input');
-      const sourceImagePath = path.join(__dirname, 'uploads', inputImagePath);
-      const destImagePath = path.join(comfyInputPath, imageName);
-      
-      console.log(`📁 Copiando immagine: ${sourceImagePath} → ${destImagePath}`);
-      fs.copyFileSync(sourceImagePath, destImagePath);
-      
-      workflow["10"] = {
-        "inputs": {
-          "image": imageName
-        },
-        "class_type": "LoadImage",
-        "_meta": {
-          "title": "Load Image"
-        }
-      };
-      
-      workflow["13"] = {
-        "inputs": {
-          "pixels": ["10", 0],
-          "vae": ["1", 2]
-        },
-        "class_type": "VAEEncode",
-        "_meta": {
-          "title": "VAE Encode"
-        }
-      };
-    }
-
-    console.log('🌐 Chiamata API ComfyUI...');
-    
-    // Prima chiamiamo l'API per mettere in coda il prompt
-    const queueResponse = await axios.post(`${COMFYUI_URL}/prompt`, {
-      prompt: workflow,
-      client_id: `nodejs-${Date.now()}`
-    }, {
-      timeout: 10000
-    });
-
-    const promptId = queueResponse.data.prompt_id;
-    console.log('📝 Prompt ID ComfyUI:', promptId);
-
-    // Polling per controllare lo stato
-    let completed = false;
-    let attempts = 0;
-    const maxAttempts = 120; // 2 minuti massimo
-    
-    while (!completed && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Attendi 1 secondo
-      attempts++;
-      
-      try {
-        const historyResponse = await axios.get(`${COMFYUI_URL}/history/${promptId}`, {
-          timeout: 5000
-        });
-        
-        console.log(`🔍 Polling tentativo ${attempts}: Controllando promptId ${promptId}`);
-        
-        // La risposta di /history/{promptId} restituisce direttamente l'oggetto del prompt
-        const history = historyResponse.data;
-        
-        if (history && Object.keys(history).length > 0) {
-          // Prendi il primo (e unico) prompt dalla risposta
-          const promptData = Object.values(history)[0];
-          console.log('📊 Storia trovata:', JSON.stringify(promptData.status, null, 2));
-          
-          if (promptData.status && promptData.status.completed) {
-            completed = true;
-            console.log('✅ Generazione ComfyUI completata');
-            
-            // Ottieni i dati dell'immagine
-            const outputs = promptData.outputs;
-            if (outputs && outputs["7"] && outputs["7"].images && outputs["7"].images.length > 0) {
-              const imageInfo = outputs["7"].images[0];
-              
-              // Scarica l'immagine da ComfyUI
-              const imageResponse = await axios.get(`${COMFYUI_URL}/view`, {
-                params: {
-                  filename: imageInfo.filename,
-                  subfolder: imageInfo.subfolder || '',
-                  type: imageInfo.type || 'output'
-                },
-                responseType: 'arraybuffer'
-              });
-              
-              // Salva l'immagine localmente
-              const timestamp = Date.now();
-              const randomId = Math.floor(Math.random() * 1000000000);
-              
-              // Usa nome descrittivo se è una batch generation
-              let filename;
-              if (batchInfo) {
-                filename = createDescriptiveFilename('comfyui', batchInfo.basePrompt, batchInfo.iteration, timestamp, randomId);
-              } else {
-                filename = `comfyui-${timestamp}-${randomId}.png`;
-              }
-              
-              const filepath = path.join(generatedDir, filename);
-              
-              fs.writeFileSync(filepath, imageResponse.data);
-              const savedImagePath = `/generated/${filename}`;
-              
-              console.log('💾 Immagine ComfyUI salvata:', filename);
-              
-              const processingTime = Date.now() - startTime;
-              
-              return {
-                provider: 'comfyui',
-                success: true,
-                type: 'image',
-                generatedImageUrl: savedImagePath,
-                savedImagePath: savedImagePath,
-                imageUrl: savedImagePath,
-                filename: filename,
-                prompt: prompt,
-                aiDescription: `Immagine generata con ComfyUI e Stable Diffusion XL Base 1.0. Modello di alta qualità ottimizzato per immagini 1024x1024 con supporto completo per image-to-image transformation. Eccellente balance tra velocità e qualità.`,
-                cost: {
-                  input: '0.000',
-                  output: '0.000',
-                  total: '0.000',
-                  currency: 'USD',
-                  breakdown: 'ComfyUI locale - nessun costo API'
-                },
-                generatedAt: new Date().toISOString(),
-                processingTime: `${processingTime}ms`,
-                imageSpecs: {
-                  model: "stable-diffusion-xl-base-1.0",
-                  type: inputImagePath ? "image-to-image" : "text-to-image",
-                  quality: "high",
-                  resolution: "1024x1024",
-                  provider: "ComfyUI Local",
-                  denoise: inputImagePath ? 0.75 : 1.0,
-                  steps: 25,
-                  cfg: 7.5
-                }
-              };
-            } else {
-              throw new Error('Nessuna immagine trovata nell\'output di ComfyUI');
-            }
-          }
-        } else {
-          console.log(`⏳ Tentativo ${attempts}: promptId ${promptId} non ancora nella history`);
-        }
-      } catch (pollError) {
-        console.log(`⏳ Polling tentativo ${attempts}/${maxAttempts}... (${pollError.message})`);
-      }
-    }
-    
-    if (!completed) {
-      throw new Error('Timeout: ComfyUI non ha completato la generazione entro 2 minuti');
-    }
-    
-  } catch (error) {
-    console.error('❌ Errore ComfyUI:', error.message);
-    
-    if (error.code === 'ECONNREFUSED') {
-      throw new Error('ComfyUI non è accessibile. Assicurati che sia in esecuzione su ' + COMFYUI_URL);
-    } else if (error.response?.status === 400) {
-      throw new Error('Workflow ComfyUI non valido o modello non trovato');
-    } else if (error.response?.status === 500) {
-      throw new Error('Errore interno di ComfyUI durante la generazione');
-    } else {
-      throw new Error(`ComfyUI: ${error.message}`);
-    }
-  }
-}
-
 // Gestione errori Multer
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
@@ -1614,7 +1416,7 @@ app.listen(PORT, () => {
   console.log('   GET  /api/images - Elenca immagini esistenti');
   console.log('   POST /api/select-image - Seleziona immagine esistente');
   console.log('   GET  /api/image/:sessionId - Ottieni dati immagine');
-  console.log('   POST /api/generate - Genera immagine da prompt (Gemini + OpenAI + Stability + ComfyUI)');
+  console.log('   POST /api/generate - Genera immagine da prompt (Gemini + OpenAI + Stability)');
   console.log('   POST /api/batch-generate - Genera X iterazioni dello stesso prompt');
   console.log('   GET  /api/batch-progress/:sessionId - Monitoraggio batch generation');
   console.log('   GET  /api/result/:sessionId - Ottieni risultato');
@@ -1623,5 +1425,4 @@ app.listen(PORT, () => {
   console.log('   🔮 Gemini 2.5 Flash Image Preview - Generazione immagini AI');
   console.log('   🎨 OpenAI GPT Image 1 - Generazione immagini');
   console.log('   ⚡ Stability AI Stable Diffusion XL - Generazione immagini di alta qualità');
-  console.log('   🎨 ComfyUI SD 3.5 Large Turbo - Generazione locale ultra-veloce');
 });

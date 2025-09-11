@@ -1,5 +1,5 @@
 // Script per gestire la pagina dei risultati con confronto AI
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('D', function() {
     const initialLoader = document.getElementById('initialLoader');
     const resultContent = document.getElementById('resultContent');
     const originalImage = document.getElementById('originalImage');
@@ -155,8 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (data.error) {
             const providerName = provider === 'openai' ? '🎨 OpenAI GPT Image 1' : 
-                                provider === 'stability' ? '⚡ Stability AI' : 
-                                provider === 'comfyui' ? '🎨 ComfyUI SD 3.5' : '🔮 Google Gemini';
+                                provider === 'stability' ? '⚡ Stability AI' : '🔮 Google Gemini';
             card.innerHTML = `
                 <div class="ai-result-header">
                     <div class="ai-provider ${provider}">
@@ -171,8 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const providerName = provider === 'openai' ? '🎨 OpenAI GPT Image 1' : 
-                            provider === 'stability' ? '⚡ Stability AI SDXL' : 
-                            provider === 'comfyui' ? '🎨 ComfyUI SD 3.5 Large Turbo' : '🔮 Google Gemini 2.5';
+                            provider === 'stability' ? '⚡ Stability AI SDXL' : '🔮 Google Gemini 2.5';
         const costDisplay = data.cost ? `$${data.cost.total}` : 'N/A';
 
         card.innerHTML = `
@@ -358,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const loaderText = initialLoader.querySelector('p');
         if (!loaderText || !progress) return;
 
-        const providers = ['gemini', 'openai', 'stability', 'comfyui'];
+        const providers = ['gemini', 'openai', 'stability'];
         const completed = providers.filter(p => progress[p] === 'completed').length;
         const generating = providers.filter(p => progress[p] === 'generating').length;
         const total = providers.length;

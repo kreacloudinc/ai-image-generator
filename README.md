@@ -4,11 +4,11 @@ Un'applicazione web completa per la generazione di immagini AI che util### 2. **
 - 🔮 **Solo Gemini**: Usa Gemini 2.5 Flash Image Preview
 - 🎨 **Solo OpenAI**: Usa DALL-E 3  
 - ⚡ **Solo Stability AI**: Usa Stable Diffusion per immagini dettagliate
-- 🔄 **Tutti**: Confronta i risultati di tutti i provider**Gemini 2.5 Flash Image Preview**, **OpenAI DALL-E 3** e **Stability AI** per trasformare le tue foto in capolavori artistici.
+- 🔄 **Tutti**: Confronta i risultati di tutti i provider cloud**Gemini 2.5 Flash Image Preview**, **OpenAI DALL-E 3** e **Stability AI** per trasformare le tue foto in capolavori artistici.
 
 ## ✨ Caratteristiche principali
 
-- 🎨 **Triple AI Provider**: Confronta risultati tra Gemini, OpenAI e Stability AI
+- 🎨 **Triple Cloud AI Provider**: Confronta risultati tra Gemini, OpenAI e Stability AI
 - 📸 **Upload flessibile**: Carica nuove immagini o scegli da quelle esistenti  
 - 🎯 **Prompt predefiniti**: 3 stili professionali pronti all'uso
 - 💰 **Analisi costi**: Confronto dettagliato dei costi per provider
@@ -124,6 +124,9 @@ Scegli tra 3 stili predefiniti:
 - **Output (testo)**: $2.50 per 1000 token
 
 ### OpenAI DALL-E 3
+- **Standard 1024x1024**: $0.040 per immagine
+
+### Stability AI SDXL
 - **Standard 1024x1024**: $0.040 per immagine
 
 ## 📁 Struttura del progetto

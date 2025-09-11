@@ -24,9 +24,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Provider costs (per image)
     const PROVIDER_COSTS = {
-        gemini: 0.075,   // $0.075 per prompt
-        openai: 0.040,   // $0.040 per immagine
-        stability: 0.040  // $0.040 per immagine
+        openai: 0.080,
+        gemini: 0.339,
+        stability: 0.020,
+
     };
 
     // Inizializza la pagina
@@ -85,38 +86,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const iterations = parseInt(iterationsNumber.value) || 10;
         const selectedProvider = document.querySelector('input[name="provider"]:checked').value;
         
-        // Calcola costo basato sul provider selezionato
-        let cost = 0;
-        let providerName = '';
+        let totalCost = 0;
         
-        switch(selectedProvider) {
-            case 'both':
-                cost = iterations * (PROVIDER_COSTS.gemini + PROVIDER_COSTS.openai);
-                providerName = 'Gemini + OpenAI';
-                break;
-            case 'all':
-                cost = iterations * (PROVIDER_COSTS.gemini + PROVIDER_COSTS.openai + PROVIDER_COSTS.stability);
-                providerName = 'Tutti i provider';
-                break;
-            case 'gemini':
-                cost = iterations * PROVIDER_COSTS.gemini;
-                providerName = 'Gemini';
-                break;
-            case 'openai':
-                cost = iterations * PROVIDER_COSTS.openai;
-                providerName = 'OpenAI';
-                break;
-            case 'stability':
-                cost = iterations * PROVIDER_COSTS.stability;
-                providerName = 'Stability AI';
-                break;
-            default:
-                cost = iterations * PROVIDER_COSTS.gemini;
-                providerName = 'Gemini';
+        if (selectedProvider === 'both') {
+            // Calculate for all providers
+            totalCost = iterations * (PROVIDER_COSTS.openai + PROVIDER_COSTS.gemini + PROVIDER_COSTS.stability);
+        } else {
+            totalCost = iterations * (PROVIDER_COSTS[selectedProvider] || 0);
         }
         
-        batchPreview.textContent = `${iterations} immagini con ${providerName}`;
-        costEstimate.textContent = `💰 Costo stimato: $${cost.toFixed(3)}`;
+        batchPreview.textContent = `${iterations} immagini`;
+        costEstimate.textContent = `💰 Costo stimato: $${totalCost.toFixed(2)}`;
     }
 
     function setupPresetButtons() {
@@ -346,9 +326,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (status === 'completed') {
                         clearInterval(pollInterval);
-                        // Imposta flag per batch e vai alla pagina dei risultati batch
-                        sessionStorage.setItem('generationType', 'batch');
-                        window.location.href = 'batch-result.html';
+                        // Vai alla pagina dei risultati
+                        window.location.href = 'result.html';
                     } else if (status === 'error') {
                         clearInterval(pollInterval);
                         showError('Errore durante la batch generation');
@@ -491,7 +470,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const names = {
             'gemini': 'Gemini',
             'openai': 'OpenAI',
-            'stability': 'Stability AI'
+            'stability': 'Stability AI',
+
         };
         return names[provider] || provider;
     }

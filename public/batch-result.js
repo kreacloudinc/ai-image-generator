@@ -406,7 +406,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'gemini': '🔮 Gemini',
             'openai': '🎨 OpenAI',
             'stability': '⚡ Stability AI',
-            'comfyui': '🎨 ComfyUI',
+
             'both': '🔥 Tutti'
         };
         return names[provider] || provider;
