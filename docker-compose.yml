@@ -1,0 +1,79 @@
+# 🐳 AI Image Generator - Docker Compose
+# Per sviluppo locale e produzione
+
+version: '3.8'
+
+services:
+  # Servizio principale - AI Image Generator
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-image-generator
+    restart: unless-stopped
+    ports:
+      - "3008:3008"
+    environment:
+      - NODE_ENV=production
+      - PORT=3008
+      # API Keys - da configurare tramite .env
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - STABILITY_API_KEY=${STABILITY_API_KEY}
+      - IMAGEN3_PROJECT_ID=${IMAGEN3_PROJECT_ID}
+    volumes:
+      # Storage persistente per le immagini
+      - ./uploads:/app/uploads
+      - ./generated:/app/generated
+      - ./logs:/app/logs
+      # Configurazioni JSON (solo lettura)
+      - ./data:/app/data:ro
+    networks:
+      - ai-generator-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3008/api/images"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx reverse proxy (opzionale per produzione)
+  nginx:
+    image: nginx:alpine
+    container_name: ai-generator-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    networks:
+      - ai-generator-network
+    profiles:
+      - production
+
+  # Redis per sessioni (opzionale per scaling)
+  redis:
+    image: redis:alpine
+    container_name: ai-generator-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - ai-generator-network
+    profiles:
+      - production
+
+# Volumes per persistenza dati
+volumes:
+  redis_data:
+    driver: local
+
+# Network per comunicazione tra servizi
+networks:
+  ai-generator-network:
+    driver: bridge

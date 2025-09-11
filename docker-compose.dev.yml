@@ -1,0 +1,32 @@
+# 🐳 AI Image Generator - Development Only
+# Versione semplificata per sviluppo locale
+
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: ai-image-generator-dev
+    restart: unless-stopped
+    ports:
+      - "3008:3008"
+    environment:
+      - NODE_ENV=development
+      - PORT=3008
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - STABILITY_API_KEY=${STABILITY_API_KEY}
+      - IMAGEN3_PROJECT_ID=${IMAGEN3_PROJECT_ID}
+    volumes:
+      # Bind mount per sviluppo (live reload se necessario)
+      - .:/app
+      - /app/node_modules
+      # Storage persistente
+      - ./uploads:/app/uploads
+      - ./generated:/app/generated
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3008/api/images"]
+      interval: 60s
+      timeout: 10s
+      retries: 2
