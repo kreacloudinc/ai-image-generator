@@ -1,4 +1,31 @@
-// Script per gestire il prompt per la generazione AI
+// Script per gestire la generazione di prompt AI
+
+// Helper per chiamate API autenticate
+function getAuthHeaders() {
+    const token = localStorage.getItem('authToken');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+// Wrapper per fetch autenticato
+async function authenticatedFetch(url, options = {}) {
+    const authHeaders = getAuthHeaders();
+    const headers = { ...authHeaders, ...(options.headers || {}) };
+    
+    const response = await fetch(url, {
+        ...options,
+        headers
+    });
+    
+    // Se non autorizzato, reindirizza al login
+    if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        window.location.href = '/login.html';
+        return;
+    }
+    
+    return response;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const originalImage = document.getElementById('originalImage');
     const promptText = document.getElementById('promptText');
@@ -155,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             // Carica i dati dell'immagine dal server
-            const response = await fetch(`/api/image/${sessionId}`);
+            const response = await authenticatedFetch(`/api/image/${sessionId}`);
             const data = await response.json();
 
             if (response.ok && data.imagePath) {
@@ -244,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const response = await fetch('/api/generate', {
+            const response = await authenticatedFetch('/api/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -289,7 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loaderText.textContent = `Avvio batch generation: ${iterations} iterazioni...`;
 
         try {
-            const response = await fetch('/api/batch-generate', {
+            const response = await authenticatedFetch('/api/batch-generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -332,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function startBatchProgressPolling(sessionId) {
         const pollInterval = setInterval(async () => {
             try {
-                const response = await fetch(`/api/batch-progress/${sessionId}`);
+                const response = await authenticatedFetch(`/api/batch-progress/${sessionId}`);
                 const data = await response.json();
 
                 if (response.ok) {
@@ -414,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function startProgressPolling(sessionId, selectedProvider) {
         const pollInterval = setInterval(async () => {
             try {
-                const response = await fetch(`/api/result/${sessionId}`);
+                const response = await authenticatedFetch(`/api/result/${sessionId}`);
                 const data = await response.json();
 
                 if (response.ok) {

@@ -1,5 +1,32 @@
-// Script per gestire la pagina dei risultati con confronto AI
-document.addEventListener('D', function() {
+// Script per gestire i risultati dell'AI
+
+// Helper per chiamate API autenticate
+function getAuthHeaders() {
+    const token = localStorage.getItem('authToken');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+// Wrapper per fetch autenticato
+async function authenticatedFetch(url, options = {}) {
+    const authHeaders = getAuthHeaders();
+    const headers = { ...authHeaders, ...(options.headers || {}) };
+    
+    const response = await fetch(url, {
+        ...options,
+        headers
+    });
+    
+    // Se non autorizzato, reindirizza al login
+    if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        window.location.href = '/login.html';
+        return;
+    }
+    
+    return response;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
     const initialLoader = document.getElementById('initialLoader');
     const resultContent = document.getElementById('resultContent');
     const originalImage = document.getElementById('originalImage');
@@ -36,7 +63,7 @@ document.addEventListener('D', function() {
             await waitForCompletion(sessionId);
             
             // Carica i dati del risultato dal server
-            const response = await fetch(`/api/result/${sessionId}`);
+            const response = await authenticatedFetch(`/api/result/${sessionId}`);
             const data = await response.json();
 
             if (response.ok && data.result) {
@@ -294,7 +321,7 @@ document.addEventListener('D', function() {
         return new Promise((resolve) => {
             const pollInterval = setInterval(async () => {
                 try {
-                    const response = await fetch(`/api/progress/${sessionId}`);
+                    const response = await authenticatedFetch(`/api/progress/${sessionId}`);
                     const progressData = await response.json();
 
                     // Aggiorna il contenuto con risultati parziali

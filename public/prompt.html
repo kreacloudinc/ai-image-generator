@@ -10,11 +10,51 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Script di autenticazione -->
+    <script>
+        // Verifica autenticazione all'avvio
+        (function() {
+            const token = localStorage.getItem('authToken');
+            
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            // Verifica validità del token
+            fetch('/api/verify-token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            }).then(response => response.json())
+              .then(data => {
+                  if (!data.valid) {
+                      localStorage.removeItem('authToken');
+                      window.location.href = '/login.html';
+                  }
+              }).catch(error => {
+                  console.error('Errore verifica token:', error);
+                  localStorage.removeItem('authToken');
+                  window.location.href = '/login.html';
+              });
+        })();
+        
+        // Funzione di logout
+        function logout() {
+            localStorage.removeItem('authToken');
+            window.location.href = '/login.html';
+        }
+    </script>
+    
     <div class="container">
-        <header>
-            <h1>🎨 Generatore Immagini AI</h1>
-            <p>Descrivi l'immagine che vuoi generare</p>
-        </header>
+        <div class="header-controls">
+            <h1>🚀 Generatore Immagini AI</h1>
+            <button onclick="logout()" class="logout-btn">
+                🚪 Esci
+            </button>
+        </div>
 
         <main class="prompt-section">
             <!-- Anteprima immagine originale -->
