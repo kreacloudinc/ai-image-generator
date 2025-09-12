@@ -1,4 +1,31 @@
 // Script per gestire l'upload delle immagini e la selezione
+
+// Helper per chiamate API autenticate
+function getAuthHeaders() {
+    const token = localStorage.getItem('authToken');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+// Wrapper per fetch autenticato
+async function authenticatedFetch(url, options = {}) {
+    const authHeaders = getAuthHeaders();
+    const headers = { ...authHeaders, ...(options.headers || {}) };
+    
+    const response = await fetch(url, {
+        ...options,
+        headers
+    });
+    
+    // Se non autorizzato, reindirizza al login
+    if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        window.location.href = '/login.html';
+        return;
+    }
+    
+    return response;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Elementi upload
     const uploadForm = document.getElementById('uploadForm');
@@ -145,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             showLoader();
             
-            const response = await fetch('/api/images');
+            const response = await authenticatedFetch('/api/images');
             const data = await response.json();
             
             hideLoader();
@@ -167,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function loadGeneratedImages() {
         try {
-            const response = await fetch('/api/generated-images');
+            const response = await authenticatedFetch('/api/generated-images');
             const data = await response.json();
             
             if (data.images && data.images.length > 0) {
@@ -333,7 +360,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoader();
             
             // Invia richiesta di selezione al server
-            const response = await fetch('/api/select-image', {
+            const response = await authenticatedFetch('/api/select-image', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -374,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('image', file);
 
-            const response = await fetch('/api/upload', {
+            const response = await authenticatedFetch('/api/upload', {
                 method: 'POST',
                 body: formData
             });
@@ -507,7 +534,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const fileName = `camera_${Date.now()}.jpg`;
             formData.append('image', capturedBlob, fileName);
             
-            const response = await fetch('/api/upload', {
+            const response = await authenticatedFetch('/api/upload', {
                 method: 'POST',
                 body: formData
             });

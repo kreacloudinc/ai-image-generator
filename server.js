@@ -41,9 +41,81 @@ if (!STABILITY_ENABLED) {
 
 
 
+// Configurazione sistema di autenticazione
+const PASSWORD = '3471281124'; // Password hardcoded
+const JWT_SECRET = 'ai-generator-secret-' + Date.now(); // Secret per JWT (generato al boot)
+
+// Simple JWT implementation without external library
+const simpleJWT = {
+    sign: (payload) => {
+        const header = Buffer.from(JSON.stringify({typ: 'JWT', alg: 'HS256'})).toString('base64url');
+        const payloadStr = Buffer.from(JSON.stringify(payload)).toString('base64url');
+        const crypto = require('crypto');
+        const signature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${payloadStr}`).digest('base64url');
+        return `${header}.${payloadStr}.${signature}`;
+    },
+    verify: (token) => {
+        try {
+            const [header, payload, signature] = token.split('.');
+            const crypto = require('crypto');
+            const expectedSignature = crypto.createHmac('sha256', JWT_SECRET).update(`${header}.${payload}`).digest('base64url');
+            if (signature !== expectedSignature) return null;
+            return JSON.parse(Buffer.from(payload, 'base64url').toString());
+        } catch {
+            return null;
+        }
+    }
+};
+
+// Middleware di autenticazione
+const requireAuth = (req, res, next) => {
+    // Escludi routes pubbliche
+    if (req.path === '/login.html' || req.path === '/api/login' || req.path === '/api/verify-token') {
+        return next();
+    }
+    
+    // Controlla token nell'Authorization header
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Token mancante', redirect: '/login.html' });
+    }
+    
+    const payload = simpleJWT.verify(token);
+    if (!payload || payload.exp < Date.now()) {
+        return res.status(401).json({ error: 'Token non valido o scaduto', redirect: '/login.html' });
+    }
+    
+    req.user = payload;
+    next();
+};
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Middleware di autenticazione per file statici e API
+app.use((req, res, next) => {
+    // Permetti accesso a login.html e API di login
+    if (req.path === '/login.html' || req.path === '/api/login' || req.path === '/api/verify-token') {
+        return next();
+    }
+    
+    // Per tutti gli altri file, controlla autenticazione
+    if (req.path === '/' || req.path === '/index.html') {
+        // Controlla se ha token valido nel localStorage (gestito dal frontend)
+        return next();
+    }
+    
+    // Per API protette
+    if (req.path.startsWith('/api/')) {
+        return requireAuth(req, res, next);
+    }
+    
+    next();
+});
+
 app.use(express.static('public')); // Serve file statici dalla cartella public
 app.use('/uploads', express.static('uploads')); // Serve immagini dalla cartella uploads
 app.use('/generated', express.static('generated')); // Serve immagini generate dalla cartella generated
@@ -84,6 +156,53 @@ const generatedDir = path.join(__dirname, 'generated');
 // Route principale - reindirizza alla pagina di upload
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Route di autenticazione
+app.post('/api/login', (req, res) => {
+    console.log('🔐 Login request ricevuta:', req.body);
+    const { password } = req.body;
+    
+    if (password !== PASSWORD) {
+        return res.status(401).json({ 
+            success: false, 
+            message: 'Password non corretta' 
+        });
+    }
+    
+    // Genera token JWT con scadenza 24h
+    const token = simpleJWT.sign({
+        authenticated: true,
+        exp: Date.now() + (24 * 60 * 60 * 1000) // 24 ore
+    });
+    
+    res.json({ 
+        success: true, 
+        token: token,
+        message: 'Login effettuato con successo' 
+    });
+});
+
+// Test route
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'Server funzionante', timestamp: Date.now() });
+});
+
+// Verifica validità token
+app.post('/api/verify-token', (req, res) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+        return res.json({ valid: false });
+    }
+    
+    const payload = simpleJWT.verify(token);
+    if (!payload || payload.exp < Date.now()) {
+        return res.json({ valid: false });
+    }
+    
+    res.json({ valid: true });
 });
 
 // API: Upload immagine
