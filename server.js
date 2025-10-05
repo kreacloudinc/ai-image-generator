@@ -32,15 +32,6 @@ if (!OPENAI_ENABLED) {
     console.warn('⚠️  OpenAI API Key non trovata - OpenAI disabilitato');
 }
 
-// Configurazione Stability AI
-const STABILITY_API_KEY = process.env.STABILITY_API_KEY;
-const STABILITY_ENABLED = !!STABILITY_API_KEY;
-if (!STABILITY_ENABLED) {
-    console.warn('⚠️  Stability API Key non trovata - Stability AI disabilitato');
-}
-
-
-
 // Configurazione sistema di autenticazione
 const PASSWORD = '3471281124'; // Password hardcoded
 const JWT_SECRET = 'ai-generator-secret-' + Date.now(); // Secret per JWT (generato al boot)
@@ -489,7 +480,7 @@ async function generateImagesAsync(sessionId, prompt, provider) {
     // Lista dei provider da utilizzare
     const providers = [];
     if (provider === 'both') {
-      providers.push('gemini', 'openai', 'stability');
+      providers.push('gemini', 'openai');
     } else {
       providers.push(provider);
     }
@@ -508,10 +499,6 @@ async function generateImagesAsync(sessionId, prompt, provider) {
           case 'openai':
             console.log('🎨 Generando con OpenAI GPT Image 1...');
             result = await generateWithOpenAI(prompt, sessionData[sessionId].imagePath);
-            break;
-          case 'stability':
-            console.log('⚡ Generando con Stability AI...');
-            result = await generateWithStabilityAI(prompt);
             break;
         }
         
@@ -665,7 +652,7 @@ async function generateSingleIteration(sessionId, basePrompt, provider, iteratio
     if (provider === 'both') {
       providers.push('gemini', 'openai'); // Multi-provider per batch
     } else if (provider === 'all') {
-      providers.push('gemini', 'openai', 'stability'); // Tutti i provider
+      providers.push('gemini', 'openai'); // Tutti i provider
     } else {
       // Provider specifico richiesto
       providers.push(provider);
@@ -716,10 +703,6 @@ async function generateSingleIteration(sessionId, basePrompt, provider, iteratio
             break;
           case 'openai':
             result = await generateWithOpenAI(iterationPrompt, sessionData[sessionId].imagePath, 
-              { basePrompt, iteration: iteration });
-            break;
-          case 'stability':
-            result = await generateWithStabilityAI(iterationPrompt, 
               { basePrompt, iteration: iteration });
             break;
         }
@@ -1422,92 +1405,7 @@ async function generateWithOpenAI(prompt, originalImagePath, batchInfo = null) {
   }
 }
 
-/**
- * Genera immagine usando Stability AI
- */
-async function generateWithStabilityAI(prompt, batchInfo = null) {
-  try {
-    console.log('⚡ Generazione immagine con Stability AI...');
-    console.log('🔑 API Key disponibile:', STABILITY_API_KEY ? 'SÌ' : 'NO');
-    
-    const startTime = Date.now();
-    
-    const response = await axios.post('https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image', {
-      text_prompts: [
-        {
-          text: prompt,
-          weight: 1
-        }
-      ],
-      cfg_scale: 7,
-      height: 1024,
-      width: 1024,
-      samples: 1,
-      steps: 30
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${STABILITY_API_KEY}`
-      }
-    });
 
-    const endTime = Date.now();
-    const processingTime = ((endTime - startTime) / 1000).toFixed(2);
-
-    if (response.data.artifacts && response.data.artifacts.length > 0) {
-      const base64Image = response.data.artifacts[0].base64;
-      const buffer = Buffer.from(base64Image, 'base64');
-      
-      // Genera nome file unico
-      const timestamp = Date.now();
-      const randomNum = Math.floor(Math.random() * 1000000000);
-      
-      // Usa nome descrittivo se è una batch generation
-      let filename;
-      if (batchInfo) {
-        filename = createDescriptiveFilename('stability', batchInfo.basePrompt, batchInfo.iteration, timestamp, randomNum);
-      } else {
-        filename = `stability-${timestamp}-${randomNum}.png`;
-      }
-      
-      const filepath = path.join(generatedDir, filename);
-      
-      // Salva l'immagine
-      fs.writeFileSync(filepath, buffer);
-      console.log(`💾 Immagine Stability AI salvata: ${filename}`);
-      
-      return {
-        success: true,
-        type: 'image',
-        imagePath: `/generated/${filename}`,
-        generatedImageUrl: `/generated/${filename}`,
-        filename: filename,
-        processingTime: `${processingTime}s`,
-        provider: 'Stability AI',
-        modelUsed: 'Stable Diffusion XL 1024',
-        aiDescription: `Immagine generata con Stability AI Stable Diffusion XL utilizzando il prompt: "${prompt}". Modello ottimizzato per immagini di alta qualità a risoluzione 1024x1024 pixel.`,
-        imageSpecs: {
-          size: '1024x1024',
-          quality: 'Alta qualità',
-          format: 'PNG'
-        },
-        generatedAt: new Date().toISOString()
-      };
-    } else {
-      throw new Error('Nessuna immagine generata da Stability AI');
-    }
-  } catch (error) {
-    console.error('❌ Errore Stability AI:', error.message);
-    if (error.response?.status === 401) {
-      throw new Error('Chiave API Stability AI non valida.');
-    } else if (error.response?.status === 429) {
-      throw new Error('Limite di richieste raggiunto per Stability AI.');
-    } else {
-      throw new Error(`Stability AI: ${error.message}`);
-    }
-  }
-}
 
 // Gestione errori Multer
 app.use((error, req, res, next) => {
@@ -1535,7 +1433,7 @@ app.listen(PORT, () => {
   console.log('   GET  /api/images - Elenca immagini esistenti');
   console.log('   POST /api/select-image - Seleziona immagine esistente');
   console.log('   GET  /api/image/:sessionId - Ottieni dati immagine');
-  console.log('   POST /api/generate - Genera immagine da prompt (Gemini + OpenAI + Stability)');
+  console.log('   POST /api/generate - Genera immagine da prompt (Gemini + OpenAI)');
   console.log('   POST /api/batch-generate - Genera X iterazioni dello stesso prompt');
   console.log('   GET  /api/batch-progress/:sessionId - Monitoraggio batch generation');
   console.log('   GET  /api/result/:sessionId - Ottieni risultato');
@@ -1543,5 +1441,4 @@ app.listen(PORT, () => {
   console.log('\n🤖 AI Providers:');
   console.log('   🔮 Gemini 2.5 Flash Image Preview - Generazione immagini AI');
   console.log('   🎨 OpenAI GPT Image 1 - Generazione immagini');
-  console.log('   ⚡ Stability AI Stable Diffusion XL - Generazione immagini di alta qualità');
 });

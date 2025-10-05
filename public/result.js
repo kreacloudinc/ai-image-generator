@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (data.error) {
             const providerName = provider === 'openai' ? '🎨 OpenAI GPT Image 1' : 
-                                provider === 'stability' ? '⚡ Stability AI' : '🔮 Google Gemini';
+                                provider === 'openai' ? '🎨 OpenAI GPT Image 1' : '🔮 Google Gemini';
             card.innerHTML = `
                 <div class="ai-result-header">
                     <div class="ai-provider ${provider}">
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const providerName = provider === 'openai' ? '🎨 OpenAI GPT Image 1' : 
-                            provider === 'stability' ? '⚡ Stability AI SDXL' : '🔮 Google Gemini 2.5';
+                            provider === 'openai' ? '🎨 OpenAI GPT Image 1' : '🔮 Google Gemini 2.5';
         const costDisplay = data.cost ? `$${data.cost.total}` : 'N/A';
 
         card.innerHTML = `
@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const loaderText = initialLoader.querySelector('p');
         if (!loaderText || !progress) return;
 
-        const providers = ['gemini', 'openai', 'stability'];
+        const providers = ['gemini', 'openai'];
         const completed = providers.filter(p => progress[p] === 'completed').length;
         const generating = providers.filter(p => progress[p] === 'generating').length;
         const total = providers.length;

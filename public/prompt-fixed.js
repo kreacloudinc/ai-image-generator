@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (selectedProvider === 'both') {
             // Calculate for all providers
-            totalCost = iterations * (PROVIDER_COSTS.openai + PROVIDER_COSTS.gemini + PROVIDER_COSTS.stability);
+            totalCost = iterations * (PROVIDER_COSTS.openai + PROVIDER_COSTS.gemini);
         } else {
             totalCost = iterations * (PROVIDER_COSTS[selectedProvider] || 0);
         }
@@ -215,8 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
             loaderText.textContent = 'Generazione con tutti i modelli AI in corso...';
         } else if (selectedProvider === 'openai') {
             loaderText.textContent = 'Generazione con OpenAI GPT Image 1 in corso...';
-        } else if (selectedProvider === 'stability') {
-            loaderText.textContent = 'Generazione con Stability AI in corso...';
+
         } else if (selectedProvider === 'gemini') {
             loaderText.textContent = 'Analisi con Gemini in corso...';
         } else {
@@ -437,7 +436,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Controllo dello stato di ogni provider
         if (selectedProvider === 'both') {
-            const providers = ['gemini', 'openai', 'stability'];
+            const providers = ['gemini', 'openai'];
             providers.forEach(provider => {
                 if (progress[provider]) {
                     const status = progress[provider];

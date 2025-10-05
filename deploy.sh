@@ -66,7 +66,7 @@ if [ ! -f .env ]; then
     echo "Please create .env file with your API keys:"
     echo "GEMINI_API_KEY=your_key_here"
     echo "OPENAI_API_KEY=your_key_here"
-    echo "STABILITY_API_KEY=your_key_here"
+
     echo "IMAGEN3_PROJECT_ID=your_project_id"
     exit 1
 fi

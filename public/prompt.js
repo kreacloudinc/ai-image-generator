@@ -52,8 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Provider costs (per image)
     const PROVIDER_COSTS = {
         gemini: 0.075,   // $0.075 per prompt
-        openai: 0.040,   // $0.040 per immagine
-        stability: 0.040  // $0.040 per immagine
+        openai: 0.040   // $0.040 per immagine
     };
 
     // Inizializza la pagina
@@ -122,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 providerName = 'Gemini + OpenAI';
                 break;
             case 'all':
-                cost = iterations * (PROVIDER_COSTS.gemini + PROVIDER_COSTS.openai + PROVIDER_COSTS.stability);
+                cost = iterations * (PROVIDER_COSTS.gemini + PROVIDER_COSTS.openai);
                 providerName = 'Tutti i provider';
                 break;
             case 'gemini':
@@ -133,10 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cost = iterations * PROVIDER_COSTS.openai;
                 providerName = 'OpenAI';
                 break;
-            case 'stability':
-                cost = iterations * PROVIDER_COSTS.stability;
-                providerName = 'Stability AI';
-                break;
+
             default:
                 cost = iterations * PROVIDER_COSTS.gemini;
                 providerName = 'Gemini';
@@ -262,8 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
             loaderText.textContent = 'Generazione con tutti i modelli AI in corso...';
         } else if (selectedProvider === 'openai') {
             loaderText.textContent = 'Generazione con OpenAI GPT Image 1 in corso...';
-        } else if (selectedProvider === 'stability') {
-            loaderText.textContent = 'Generazione con Stability AI in corso...';
+
         } else if (selectedProvider === 'gemini') {
             loaderText.textContent = 'Analisi con Gemini in corso...';
         } else {
@@ -485,7 +480,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Controllo dello stato di ogni provider
         if (selectedProvider === 'both') {
-            const providers = ['gemini', 'openai', 'stability'];
+            const providers = ['gemini', 'openai'];
             providers.forEach(provider => {
                 if (progress[provider]) {
                     const status = progress[provider];
@@ -517,8 +512,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function getProviderName(provider) {
         const names = {
             'gemini': 'Gemini',
-            'openai': 'OpenAI',
-            'stability': 'Stability AI'
+            'openai': 'OpenAI'
         };
         return names[provider] || provider;
     }

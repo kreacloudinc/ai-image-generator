@@ -432,8 +432,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const names = {
             'gemini': '🔮 Gemini',
             'openai': '🎨 OpenAI',
-            'stability': '⚡ Stability AI',
-
             'both': '🔥 Tutti'
         };
         return names[provider] || provider;

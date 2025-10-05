@@ -19,7 +19,7 @@ services:
       # API Keys - da configurare tramite .env
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - STABILITY_API_KEY=${STABILITY_API_KEY}
+
       - IMAGEN3_PROJECT_ID=${IMAGEN3_PROJECT_ID}
     volumes:
       # Storage persistente per le immagini

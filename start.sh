@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 🚀 AI Image Generator - Startup Script (Cloud-Only Version)
-# Avvia Node.js Server con 3 provider cloud: Gemini, OpenAI, Stability AI
+# Avvia Node.js Server con 2 provider cloud: Gemini, OpenAI
 
 set -e  # Esce al primo errore
 
