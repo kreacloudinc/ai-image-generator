@@ -567,4 +567,85 @@ document.addEventListener('DOMContentLoaded', function() {
             cameraStream.getTracks().forEach(track => track.stop());
         }
     });
+    
+    // Carica i batch completati all'avvio
+    loadCompletedBatches();
 });
+
+// Funzioni per la galleria batch
+async function loadCompletedBatches() {
+    try {
+        const response = await authenticatedFetch('/api/completed-batches');
+        if (!response.ok) {
+            throw new Error('Errore nel caricamento dei batch');
+        }
+        
+        const batches = await response.json();
+        displayBatchGallery(batches);
+    } catch (error) {
+        console.error('Errore nel caricamento dei batch:', error);
+        displayBatchGallery([]);
+    }
+}
+
+function displayBatchGallery(batches) {
+    const batchGallery = document.getElementById('batchGallery');
+    
+    if (!batches || batches.length === 0) {
+        batchGallery.innerHTML = `
+            <div class="batch-gallery-empty">
+                <span>🎨</span>
+                <p>Nessun batch completato ancora.<br>Crea il tuo primo batch dalla sezione prompt!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    batchGallery.innerHTML = batches.map(batch => `
+        <div class="batch-item" onclick="viewBatchDetails('${batch.sessionId}')">
+            <img src="${batch.previewImage}" alt="Preview batch" class="batch-preview-image" onerror="this.src='data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" width=\\"300\\" height=\\"200\\" viewBox=\\"0 0 300 200\\"><rect width=\\"300\\" height=\\"200\\" fill=\\"%23f8f9fa\\"/><text x=\\"150\\" y=\\"100\\" text-anchor=\\"middle\\" dy=\\".3em\\" fill=\\"%236c757d\\">Immagine non disponibile</text></svg>'">
+            <div class="batch-info">
+                <div class="batch-prompt">${escapeHtml(batch.prompt)}</div>
+                <div class="batch-meta">
+                    <span class="batch-date">${formatDate(batch.timestamp)}</span>
+                </div>
+                <div class="batch-stats-row">
+                    <span class="batch-count">${batch.totalImages} immagini</span>
+                    <span style="color: #27ae60; font-weight: 500;">✅ Completato</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function viewBatchDetails(sessionId) {
+    // Reindirizza alla pagina dei risultati del batch
+    window.location.href = `batch-result.html?sessionId=${sessionId}`;
+}
+
+function formatDate(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {
+        return 'Oggi';
+    } else if (diffDays === 2) {
+        return 'Ieri';
+    } else if (diffDays <= 7) {
+        return `${diffDays - 1} giorni fa`;
+    } else {
+        return date.toLocaleDateString('it-IT', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}

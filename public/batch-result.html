@@ -175,6 +175,27 @@
         </main>
     </div>
 
+    <!-- Lightbox per galleria navigabile -->
+    <div id="lightbox" class="lightbox hidden">
+        <div class="lightbox-backdrop" onclick="closeLightbox()"></div>
+        <div class="lightbox-content">
+            <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+            <button class="lightbox-prev" onclick="prevImage()">‹</button>
+            <button class="lightbox-next" onclick="nextImage()">›</button>
+            <div class="lightbox-image-container">
+                <img id="lightboxImage" src="" alt="">
+            </div>
+            <div class="lightbox-info">
+                <div class="lightbox-title" id="lightboxTitle"></div>
+                <div class="lightbox-details" id="lightboxDetails"></div>
+                <div class="lightbox-actions">
+                    <button class="btn btn-small" onclick="downloadCurrentImage()">📥 Scarica</button>
+                    <button class="btn btn-small" onclick="copyImageUrl()">🔗 Copia URL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="batch-result.js"></script>
 </body>
 </html>

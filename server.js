@@ -948,6 +948,34 @@ app.get('/api/batch-progress/:sessionId', (req, res) => {
   res.json(batchData);
 });
 
+// API: Ottieni tutti i batch completati per la galleria
+app.get('/api/completed-batches', requireAuth, (req, res) => {
+  try {
+    const completedBatches = [];
+    
+    for (const [sessionId, data] of Object.entries(sessionData)) {
+      if (data.batchStatus === 'completed' && data.batchResults && data.batchResults.length > 0) {
+        completedBatches.push({
+          sessionId: sessionId,
+          prompt: data.prompt || 'Prompt non disponibile',
+          timestamp: data.timestamp || Date.now(),
+          totalImages: data.batchResults.length,
+          previewImage: data.batchResults[0]?.imageUrl || null,
+          results: data.batchResults
+        });
+      }
+    }
+    
+    // Ordina per timestamp (più recenti per primi)
+    completedBatches.sort((a, b) => b.timestamp - a.timestamp);
+    
+    res.json(completedBatches);
+  } catch (error) {
+    console.error('Errore nel recupero dei batch completati:', error);
+    res.status(500).json({ error: 'Errore nel recupero dei batch completati' });
+  }
+});
+
 // API: Reset sessione (per ricominciare)
 app.delete('/api/session/:sessionId', (req, res) => {
   const { sessionId } = req.params;
@@ -1436,6 +1464,7 @@ app.listen(PORT, () => {
   console.log('   POST /api/generate - Genera immagine da prompt (Gemini + OpenAI)');
   console.log('   POST /api/batch-generate - Genera X iterazioni dello stesso prompt');
   console.log('   GET  /api/batch-progress/:sessionId - Monitoraggio batch generation');
+  console.log('   GET  /api/completed-batches - Galleria batch completati');
   console.log('   GET  /api/result/:sessionId - Ottieni risultato');
   console.log('   DELETE /api/session/:sessionId - Reset sessione');
   console.log('\n🤖 AI Providers:');
