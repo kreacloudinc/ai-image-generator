@@ -84,12 +84,23 @@ const requireAuth = (req, res, next) => {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Aumentato limite per immagini base64
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Middleware di autenticazione per file statici e API
 app.use((req, res, next) => {
     // Permetti accesso a login.html e API di login
     if (req.path === '/login.html' || req.path === '/api/login' || req.path === '/api/verify-token') {
+        return next();
+    }
+    
+    // Permetti accesso all'applicazione Wedding AI (sposi) senza autenticazione
+    if (req.path === '/sposi.html' || req.path === '/sposi.js' || req.path === '/sposi-styles.css') {
+        return next();
+    }
+    
+    // Permetti accesso agli endpoint Wedding AI senza autenticazione
+    if (req.path === '/api/generate-wedding-look' || req.path === '/api/send-wedding-email') {
         return next();
     }
     
@@ -1492,7 +1503,7 @@ High quality, professional photography, natural lighting, 8k resolution.`;
     console.log('🎨 Invio richiesta a Gemini...');
     
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp-image-generation-001'
+      model: 'gemini-2.5-flash-image-preview'
     });
     
     const result = await model.generateContent([
