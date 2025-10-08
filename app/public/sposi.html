@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding AI - Crea il tuo Look da Sposo/Sposa</title>
+    <link rel="stylesheet" href="sposi-styles.css">
+</head>
+<body>
+    <!-- Sfondo animato -->
+    <div class="animated-background">
+        <div class="heart"></div>
+        <div class="heart"></div>
+        <div class="heart"></div>
+        <div class="heart"></div>
+        <div class="heart"></div>
+    </div>
+
+    <!-- Pagina di presentazione -->
+    <div id="welcomePage" class="page active">
+        <div class="welcome-container">
+            <h1 class="main-title">
+                <span class="gradient-text">Wedding AI</span>
+            </h1>
+            <p class="subtitle">Crea il tuo look da sogno con l'intelligenza artificiale</p>
+            
+            <div class="choice-buttons">
+                <button class="choice-btn sposo-btn" onclick="selectRole('sposo')">
+                    <span class="icon">🤵</span>
+                    <span class="text">Sposo</span>
+                </button>
+                <button class="choice-btn sposa-btn" onclick="selectRole('sposa')">
+                    <span class="icon">👰</span>
+                    <span class="text">Sposa</span>
+                </button>
+            </div>
+
+            <div class="welcome-features">
+                <div class="feature">
+                    <div class="feature-icon">📸</div>
+                    <div class="feature-text">Scatta una foto</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">✨</div>
+                    <div class="feature-text">Scegli il tuo stile</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎨</div>
+                    <div class="feature-text">Genera il tuo look</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagina cattura foto -->
+    <div id="capturePage" class="page">
+        <div class="capture-container">
+            <button class="back-btn" onclick="goToWelcome()">← Indietro</button>
+            
+            <h2 class="page-title">Scatta la tua foto</h2>
+            <p class="page-subtitle">Assicurati di essere ben inquadrato</p>
+
+            <div class="camera-container">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+                <img id="photoPreview" style="display: none;">
+            </div>
+
+            <div class="camera-controls">
+                <button id="startCamera" class="btn btn-primary" onclick="startCamera()">
+                    📷 Avvia Fotocamera
+                </button>
+                <button id="captureBtn" class="btn btn-primary" onclick="capturePhoto()" style="display: none;">
+                    📸 Scatta Foto
+                </button>
+                <button id="retakeBtn" class="btn btn-secondary" onclick="retakePhoto()" style="display: none;">
+                    🔄 Rifai Foto
+                </button>
+                <button id="confirmPhotoBtn" class="btn btn-success" onclick="confirmPhoto()" style="display: none;">
+                    ✓ Conferma Foto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagina scelta caratteristiche -->
+    <div id="stylePage" class="page">
+        <div class="style-container">
+            <button class="back-btn" onclick="goToCapture()">← Indietro</button>
+            
+            <h2 class="page-title">Scegli il tuo stile</h2>
+            <p class="page-subtitle">Seleziona una o più caratteristiche che ti rappresentano</p>
+
+            <div class="photo-mini-preview">
+                <img id="miniPhoto" src="">
+                <span id="roleIndicator"></span>
+            </div>
+
+            <!-- Caratteristiche Sposo -->
+            <div id="sposoStyles" class="styles-grid" style="display: none;">
+                <button class="style-btn" data-style="classico">
+                    <span class="style-icon">🎩</span>
+                    <span class="style-name">Classico</span>
+                </button>
+                <button class="style-btn" data-style="moderno">
+                    <span class="style-icon">💼</span>
+                    <span class="style-name">Moderno</span>
+                </button>
+                <button class="style-btn" data-style="elegante">
+                    <span class="style-icon">👔</span>
+                    <span class="style-name">Elegante</span>
+                </button>
+                <button class="style-btn" data-style="bohemien">
+                    <span class="style-icon">🌿</span>
+                    <span class="style-name">Bohémien</span>
+                </button>
+                <button class="style-btn" data-style="vintage">
+                    <span class="style-icon">🕰️</span>
+                    <span class="style-name">Vintage</span>
+                </button>
+                <button class="style-btn" data-style="casual-chic">
+                    <span class="style-icon">👕</span>
+                    <span class="style-name">Casual Chic</span>
+                </button>
+                <button class="style-btn" data-style="formale">
+                    <span class="style-icon">🎖️</span>
+                    <span class="style-name">Formale</span>
+                </button>
+                <button class="style-btn" data-style="artistico">
+                    <span class="style-icon">🎨</span>
+                    <span class="style-name">Artistico</span>
+                </button>
+                <button class="style-btn" data-style="mediterraneo">
+                    <span class="style-icon">🌊</span>
+                    <span class="style-name">Mediterraneo</span>
+                </button>
+                <button class="style-btn" data-style="sofisticato">
+                    <span class="style-icon">⭐</span>
+                    <span class="style-name">Sofisticato</span>
+                </button>
+                <button class="style-btn" data-style="rustico">
+                    <span class="style-icon">🌾</span>
+                    <span class="style-name">Rustico</span>
+                </button>
+                <button class="style-btn" data-style="rockstar">
+                    <span class="style-icon">🎸</span>
+                    <span class="style-name">Rock Star</span>
+                </button>
+            </div>
+
+            <!-- Caratteristiche Sposa -->
+            <div id="sposaStyles" class="styles-grid" style="display: none;">
+                <button class="style-btn" data-style="principessa">
+                    <span class="style-icon">👑</span>
+                    <span class="style-name">Principessa</span>
+                </button>
+                <button class="style-btn" data-style="romantica">
+                    <span class="style-icon">💕</span>
+                    <span class="style-name">Romantica</span>
+                </button>
+                <button class="style-btn" data-style="moderna">
+                    <span class="style-icon">✨</span>
+                    <span class="style-name">Moderna</span>
+                </button>
+                <button class="style-btn" data-style="bohemien">
+                    <span class="style-icon">🌸</span>
+                    <span class="style-name">Bohémien</span>
+                </button>
+                <button class="style-btn" data-style="vintage">
+                    <span class="style-icon">💎</span>
+                    <span class="style-name">Vintage</span>
+                </button>
+                <button class="style-btn" data-style="elegante-minimale">
+                    <span class="style-icon">🤍</span>
+                    <span class="style-name">Elegante Minimale</span>
+                </button>
+                <button class="style-btn" data-style="glamour">
+                    <span class="style-icon">💃</span>
+                    <span class="style-name">Glamour</span>
+                </button>
+                <button class="style-btn" data-style="naturale">
+                    <span class="style-icon">🌿</span>
+                    <span class="style-name">Naturale</span>
+                </button>
+                <button class="style-btn" data-style="fiabesca">
+                    <span class="style-icon">🦋</span>
+                    <span class="style-name">Fiabesca</span>
+                </button>
+                <button class="style-btn" data-style="sensuale">
+                    <span class="style-icon">🌹</span>
+                    <span class="style-name">Sensuale</span>
+                </button>
+                <button class="style-btn" data-style="mediterranea">
+                    <span class="style-icon">☀️</span>
+                    <span class="style-name">Mediterranea</span>
+                </button>
+                <button class="style-btn" data-style="haute-couture">
+                    <span class="style-icon">👗</span>
+                    <span class="style-name">Haute Couture</span>
+                </button>
+            </div>
+
+            <div class="selected-styles-container">
+                <h3>Stili selezionati:</h3>
+                <div id="selectedStylesList" class="selected-styles-list">
+                    <span class="no-selection">Nessuno stile selezionato</span>
+                </div>
+            </div>
+
+            <button id="generateBtn" class="btn btn-generate" onclick="generateImage()" disabled>
+                🎨 Genera il tuo look!
+            </button>
+        </div>
+    </div>
+
+    <!-- Pagina risultato -->
+    <div id="resultPage" class="page">
+        <div class="result-container">
+            <h2 class="page-title">Il tuo look da sogno!</h2>
+            
+            <div class="loading-container" id="loadingContainer">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Stiamo creando il tuo look perfetto...</p>
+                <p class="loading-subtext">Questo potrebbe richiedere alcuni secondi</p>
+            </div>
+
+            <div class="result-content" id="resultContent" style="display: none;">
+                <div class="result-images">
+                    <div class="result-image-container">
+                        <h3>Foto Originale</h3>
+                        <img id="originalImage" src="">
+                    </div>
+                    <div class="result-image-container">
+                        <h3>Il Tuo Nuovo Look</h3>
+                        <img id="generatedImage" src="">
+                    </div>
+                </div>
+
+                <div class="email-section">
+                    <h3>Invia per email</h3>
+                    <div class="email-form">
+                        <input type="email" id="emailInput" placeholder="inserisci@tuaemail.com" class="email-input">
+                        <button class="btn btn-primary" onclick="sendEmail()">
+                            📧 Invia Email
+                        </button>
+                    </div>
+                    <div id="emailStatus" class="email-status"></div>
+                </div>
+
+                <div class="result-actions">
+                    <button class="btn btn-secondary" onclick="downloadImage()">
+                        💾 Scarica Immagine
+                    </button>
+                    <button class="btn btn-primary" onclick="startOver()">
+                        🔄 Crea un nuovo look
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="sposi.js"></script>
+</body>
+</html>

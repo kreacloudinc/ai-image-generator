@@ -1433,6 +1433,245 @@ async function generateWithOpenAI(prompt, originalImagePath, batchInfo = null) {
   }
 }
 
+// ========================================
+// ENDPOINTS PER APPLICAZIONE SPOSI
+// ========================================
+
+// Endpoint per generare immagini wedding look
+app.post('/api/generate-wedding-look', async (req, res) => {
+  const startTime = Date.now();
+  console.log('\n🤵👰 === INIZIO GENERAZIONE WEDDING LOOK ===');
+  
+  try {
+    const { role, styles, photo } = req.body;
+    
+    if (!role || !styles || !photo) {
+      return res.status(400).json({ 
+        error: 'Dati mancanti: role, styles e photo sono richiesti' 
+      });
+    }
+    
+    console.log(`👤 Ruolo: ${role}`);
+    console.log(`✨ Stili selezionati: ${styles.join(', ')}`);
+    
+    // Salva la foto originale
+    const timestamp = Date.now();
+    const photoFilename = `wedding-original-${timestamp}.jpg`;
+    const photoPath = path.join(__dirname, 'uploads', photoFilename);
+    
+    // Rimuovi il prefisso data:image e converti base64 in buffer
+    const base64Data = photo.replace(/^data:image\/\w+;base64,/, '');
+    const photoBuffer = Buffer.from(base64Data, 'base64');
+    fs.writeFileSync(photoPath, photoBuffer);
+    
+    console.log('📸 Foto originale salvata:', photoFilename);
+    
+    // Crea il prompt ottimizzato
+    const genderTerm = role === 'sposo' ? 'groom' : 'bride';
+    const outfitTerm = role === 'sposo' ? 'wedding suit' : 'wedding dress';
+    const stylesDescription = styles.join(', ');
+    
+    const prompt = `Create a beautiful and creative ${genderTerm} portrait wearing an elegant ${outfitTerm}. 
+The style should be: ${stylesDescription}. 
+The outfit should be highly creative and unique, incorporating elements of ${stylesDescription} style.
+VERY IMPORTANT: Preserve the person's facial features, face shape, and identity EXACTLY as in the original photo.
+The background should be elegant and suitable for a wedding photoshoot.
+High quality, professional photography, natural lighting, 8k resolution.`;
+
+    console.log('📝 Prompt generato:', prompt);
+    
+    // Converti l'immagine in formato per Gemini
+    const imageData = {
+      inlineData: {
+        data: base64Data,
+        mimeType: 'image/jpeg'
+      }
+    };
+    
+    // Genera l'immagine con Gemini 2.5 Flash Image Preview
+    console.log('🎨 Invio richiesta a Gemini...');
+    
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash-exp-image-generation-001'
+    });
+    
+    const result = await model.generateContent([
+      {
+        text: prompt
+      },
+      imageData
+    ]);
+    
+    const response = await result.response;
+    const candidates = response.candidates;
+    
+    if (!candidates || candidates.length === 0) {
+      throw new Error('Nessuna immagine generata da Gemini');
+    }
+    
+    // Estrai l'immagine generata
+    let generatedImageData = null;
+    let generatedImageUrl = null;
+    
+    for (const part of candidates[0].content.parts) {
+      if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
+        generatedImageData = part.inlineData.data;
+        break;
+      }
+    }
+    
+    if (!generatedImageData) {
+      throw new Error('Nessuna immagine trovata nella risposta di Gemini');
+    }
+    
+    // Salva l'immagine generata
+    const generatedFilename = `wedding-${role}-${timestamp}.jpg`;
+    const generatedPath = path.join(__dirname, 'generated', generatedFilename);
+    const generatedBuffer = Buffer.from(generatedImageData, 'base64');
+    fs.writeFileSync(generatedPath, generatedBuffer);
+    
+    generatedImageUrl = `/generated/${generatedFilename}`;
+    
+    console.log('✅ Immagine generata e salvata:', generatedFilename);
+    
+    const processingTime = Date.now() - startTime;
+    console.log(`⏱️ Tempo totale: ${processingTime}ms`);
+    
+    res.json({
+      success: true,
+      imageUrl: generatedImageUrl,
+      originalImagePath: `/uploads/${photoFilename}`,
+      role: role,
+      styles: styles,
+      processingTime: `${processingTime}ms`
+    });
+    
+  } catch (error) {
+    console.error('❌ Errore generazione wedding look:', error);
+    res.status(500).json({ 
+      error: 'Errore durante la generazione dell\'immagine',
+      details: error.message 
+    });
+  }
+});
+
+// Endpoint per inviare email con Brevo
+app.post('/api/send-wedding-email', async (req, res) => {
+  console.log('\n📧 === INVIO EMAIL WEDDING LOOK ===');
+  
+  try {
+    const { email, imageUrl, role, styles } = req.body;
+    
+    if (!email || !imageUrl) {
+      return res.status(400).json({ 
+        error: 'Email e imageUrl sono richiesti' 
+      });
+    }
+    
+    console.log(`📬 Destinatario: ${email}`);
+    console.log(`🖼️ Immagine: ${imageUrl}`);
+    
+    // Verifica se Brevo è configurato
+    const BREVO_API_KEY = process.env.BREVO_API_KEY;
+    
+    if (!BREVO_API_KEY) {
+      console.warn('⚠️ BREVO_API_KEY non configurata, simulazione invio email');
+      
+      // Simulazione per testing
+      return res.json({
+        success: true,
+        message: 'Email simulata (Brevo non configurato)',
+        email: email
+      });
+    }
+    
+    // Prepara il contenuto dell'email
+    const genderTerm = role === 'sposo' ? 'Sposo' : 'Sposa';
+    const stylesText = styles.join(', ');
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+          .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+          h1 { color: #FF69B4; text-align: center; }
+          .image-container { text-align: center; margin: 20px 0; }
+          img { max-width: 100%; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+          .info { background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; }
+          .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>🤵👰 Il Tuo Wedding Look AI</h1>
+          <p>Ecco la tua immagine personalizzata generata con l'intelligenza artificiale!</p>
+          
+          <div class="image-container">
+            <img src="${process.env.BASE_URL || 'http://localhost:3000'}${imageUrl}" alt="Wedding Look">
+          </div>
+          
+          <div class="info">
+            <strong>Dettagli:</strong><br>
+            👤 Ruolo: ${genderTerm}<br>
+            ✨ Stili: ${stylesText}
+          </div>
+          
+          <p style="text-align: center;">Grazie per aver utilizzato Wedding AI!</p>
+          
+          <div class="footer">
+            Questa email è stata generata automaticamente da Wedding AI<br>
+            © 2025 Wedding AI - Powered by AI
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Invia email tramite Brevo
+    const brevoResponse = await axios.post(
+      'https://api.brevo.com/v3/smtp/email',
+      {
+        sender: {
+          name: 'Wedding AI',
+          email: process.env.BREVO_SENDER_EMAIL || 'noreply@weddingai.com'
+        },
+        to: [
+          {
+            email: email
+          }
+        ],
+        subject: '🤵👰 Il tuo Wedding Look AI è pronto!',
+        htmlContent: htmlContent
+      },
+      {
+        headers: {
+          'api-key': BREVO_API_KEY,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    console.log('✅ Email inviata con successo via Brevo');
+    
+    res.json({
+      success: true,
+      message: 'Email inviata con successo',
+      email: email,
+      messageId: brevoResponse.data.messageId
+    });
+    
+  } catch (error) {
+    console.error('❌ Errore invio email:', error.response?.data || error.message);
+    res.status(500).json({ 
+      error: 'Errore durante l\'invio dell\'email',
+      details: error.message 
+    });
+  }
+});
+
 
 
 // Gestione errori Multer
