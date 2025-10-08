@@ -100,7 +100,7 @@ app.use((req, res, next) => {
     }
     
     // Permetti accesso agli endpoint Wedding AI senza autenticazione
-    if (req.path === '/api/generate-wedding-look' || req.path === '/api/send-wedding-email') {
+    if (req.path === '/api/generate-wedding-look' || req.path === '/api/send-wedding-email' || req.path === '/api/generate-wedding-video') {
         return next();
     }
     
@@ -1678,6 +1678,104 @@ app.post('/api/send-wedding-email', async (req, res) => {
     console.error('❌ Errore invio email:', error.response?.data || error.message);
     res.status(500).json({ 
       error: 'Errore durante l\'invio dell\'email',
+      details: error.message 
+    });
+  }
+});
+
+// Endpoint per generare video wedding con Veo 3
+app.post('/api/generate-wedding-video', async (req, res) => {
+  const startTime = Date.now();
+  console.log('\n🎥 === INIZIO GENERAZIONE VIDEO WEDDING ===');
+  
+  try {
+    const { imageUrl, role, styles } = req.body;
+    
+    if (!imageUrl) {
+      return res.status(400).json({ 
+        error: 'ImageUrl è richiesto' 
+      });
+    }
+    
+    console.log(`👤 Ruolo: ${role}`);
+    console.log(`🖼️ Immagine: ${imageUrl}`);
+    console.log(`✨ Stili: ${styles.join(', ')}`);
+    
+    // Crea il prompt per il video
+    const genderTerm = role === 'sposo' ? 'groom' : 'bride';
+    const stylesDescription = styles.join(', ');
+    
+    const videoPrompt = `A cinematic video of a ${genderTerm} in an elegant wedding outfit.
+The ${genderTerm} is turning slowly, showing the beautiful ${stylesDescription} style wedding attire.
+Soft wind gently moves the fabric.
+Professional wedding videography, smooth camera movement, elegant atmosphere, soft lighting.
+High quality, 4K resolution, romantic mood.`;
+
+    console.log('📝 Prompt video:', videoPrompt);
+    
+    // Verifica se l'API Veo 3 è disponibile
+    // NOTA: Veo 3 è attualmente in preview limitata
+    // Per ora implementiamo una versione simulata
+    
+    const VEO_API_AVAILABLE = false; // Cambia a true quando avrai accesso all'API
+    
+    if (!VEO_API_AVAILABLE) {
+      console.log('⚠️ API Veo 3 non disponibile - simulazione video');
+      
+      // Simulazione: in produzione, qui faresti la chiamata a Veo 3
+      // const model = genAI.getGenerativeModel({ model: 'veo-3' });
+      // const result = await model.generateVideo({ prompt: videoPrompt, ... });
+      
+      return res.status(503).json({
+        error: 'Generazione video temporaneamente non disponibile',
+        details: 'L\'API Veo 3 è attualmente in preview limitata. Contatta Google Cloud per l\'accesso.'
+      });
+    }
+    
+    // Quando Veo 3 sarà disponibile, usa questo codice:
+    /*
+    console.log('🎬 Invio richiesta a Veo 3...');
+    
+    const model = genAI.getGenerativeModel({ 
+      model: 'veo-3'
+    });
+    
+    const result = await model.generateVideo({
+      prompt: videoPrompt,
+      duration: 5, // secondi
+      aspectRatio: '9:16', // formato verticale per social
+      fps: 24
+    });
+    
+    const videoData = result.video;
+    
+    // Salva il video
+    const timestamp = Date.now();
+    const videoFilename = `wedding-video-${role}-${timestamp}.mp4`;
+    const videoPath = path.join(__dirname, 'generated', videoFilename);
+    
+    const videoBuffer = Buffer.from(videoData, 'base64');
+    fs.writeFileSync(videoPath, videoBuffer);
+    
+    const videoUrl = `/generated/${videoFilename}`;
+    
+    console.log('✅ Video generato e salvato:', videoFilename);
+    
+    const processingTime = Date.now() - startTime;
+    console.log(`⏱️ Tempo totale: ${processingTime}ms`);
+    
+    res.json({
+      success: true,
+      videoUrl: videoUrl,
+      duration: 5,
+      processingTime: `${processingTime}ms`
+    });
+    */
+    
+  } catch (error) {
+    console.error('❌ Errore generazione video:', error);
+    res.status(500).json({ 
+      error: 'Errore durante la generazione del video',
       details: error.message 
     });
   }

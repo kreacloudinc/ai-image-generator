@@ -228,11 +228,12 @@
                 <div class="result-images">
                     <div class="result-image-container">
                         <h3>Foto Originale</h3>
-                        <img id="originalImage" src="">
+                        <img id="originalImage" src="" onclick="openFullscreen(this)">
                     </div>
                     <div class="result-image-container">
                         <h3>Il Tuo Nuovo Look</h3>
-                        <img id="generatedImage" src="">
+                        <img id="generatedImage" src="" onclick="openFullscreen(this)" class="clickable-image">
+                        <p class="image-hint">👆 Clicca per visualizzare a schermo intero</p>
                     </div>
                 </div>
 
@@ -247,6 +248,18 @@
                     <div id="emailStatus" class="email-status"></div>
                 </div>
 
+                <div class="video-section" id="videoSection" style="display: none;">
+                    <h3>🎬 Crea un video animato</h3>
+                    <p class="video-description">Trasforma il tuo look in un video dinamico con Veo 3!</p>
+                    <button class="btn btn-video" onclick="generateVideo()">
+                        🎥 Genera Video con Veo 3
+                    </button>
+                    <div id="videoStatus" class="video-status"></div>
+                    <div id="videoPlayer" class="video-player" style="display: none;">
+                        <video id="generatedVideo" controls></video>
+                    </div>
+                </div>
+
                 <div class="result-actions">
                     <button class="btn btn-secondary" onclick="downloadImage()">
                         💾 Scarica Immagine
@@ -257,6 +270,13 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Modal Fullscreen per immagini -->
+    <div id="fullscreenModal" class="fullscreen-modal" onclick="closeFullscreen()">
+        <span class="close-fullscreen">&times;</span>
+        <img id="fullscreenImage" class="fullscreen-content">
+        <div class="fullscreen-caption">Clicca ovunque per chiudere</div>
     </div>
 
     <script src="sposi.js"></script>

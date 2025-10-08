@@ -278,6 +278,9 @@ async function generateImage() {
         document.getElementById('originalImage').src = state.photoData;
         document.getElementById('generatedImage').src = result.imageUrl;
         
+        // Mostra la sezione video
+        document.getElementById('videoSection').style.display = 'block';
+        
     } catch (error) {
         console.error('Errore generazione immagine:', error);
         alert('Si è verificato un errore durante la generazione. Riprova!');
@@ -378,6 +381,101 @@ function startOver() {
     document.getElementById('emailInput').value = '';
     document.getElementById('emailStatus').innerHTML = '';
     
+    // Reset video
+    document.getElementById('videoSection').style.display = 'none';
+    document.getElementById('videoStatus').innerHTML = '';
+    document.getElementById('videoPlayer').style.display = 'none';
+    
     // Torna alla pagina di benvenuto
     changePage('resultPage', 'welcomePage');
 }
+
+// Genera video con Veo 3
+async function generateVideo() {
+    const videoStatus = document.getElementById('videoStatus');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const generatedVideo = document.getElementById('generatedVideo');
+    
+    if (!state.generatedImageUrl) {
+        alert('Nessuna immagine disponibile per generare il video!');
+        return;
+    }
+    
+    // Mostra loading
+    videoStatus.innerHTML = '<span class="status-loading">🎬 Generazione video in corso... Questo può richiedere fino a 2 minuti</span>';
+    videoPlayer.style.display = 'none';
+    
+    try {
+        // Prepara la richiesta
+        const requestData = {
+            imageUrl: state.generatedImageUrl,
+            role: state.role,
+            styles: state.selectedStyles
+        };
+        
+        console.log('🎥 Richiesta generazione video:', requestData);
+        
+        // Chiamata API
+        const response = await fetch('/api/generate-wedding-video', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.details || 'Errore nella generazione del video');
+        }
+        
+        const result = await response.json();
+        
+        console.log('✅ Video generato:', result);
+        
+        // Mostra il video
+        videoStatus.innerHTML = '<span class="status-success">✅ Video generato con successo!</span>';
+        generatedVideo.src = result.videoUrl;
+        videoPlayer.style.display = 'block';
+        
+        // Salva l'URL del video nello stato
+        state.generatedVideoUrl = result.videoUrl;
+        
+    } catch (error) {
+        console.error('❌ Errore generazione video:', error);
+        videoStatus.innerHTML = `<span class="status-error">❌ ${error.message}</span>`;
+        
+        setTimeout(() => {
+            videoStatus.innerHTML = '';
+        }, 5000);
+    }
+}
+
+// Apri immagine a schermo intero
+function openFullscreen(imgElement) {
+    const modal = document.getElementById('fullscreenModal');
+    const fullscreenImg = document.getElementById('fullscreenImage');
+    
+    modal.classList.add('active');
+    fullscreenImg.src = imgElement.src;
+    
+    // Previeni scroll del body quando il modal è aperto
+    document.body.style.overflow = 'hidden';
+}
+
+// Chiudi schermo intero
+function closeFullscreen() {
+    const modal = document.getElementById('fullscreenModal');
+    
+    modal.classList.remove('active');
+    
+    // Ripristina scroll del body
+    document.body.style.overflow = 'auto';
+}
+
+// Chiudi anche con tasto ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeFullscreen();
+    }
+});
