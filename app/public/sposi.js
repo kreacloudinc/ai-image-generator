@@ -14,6 +14,32 @@ function selectRole(role) {
     state.role = role;
     console.log('Ruolo selezionato:', role);
     
+    // Reset UI della camera per nuovo utente
+    const video = document.getElementById('video');
+    const photoPreview = document.getElementById('photoPreview');
+    const canvas = document.getElementById('canvas');
+    
+    if (video) video.style.display = 'block';
+    if (photoPreview) {
+        photoPreview.style.display = 'none';
+        photoPreview.src = '';
+    }
+    
+    // Reset bottoni
+    const captureBtn = document.getElementById('captureBtn');
+    const retakeBtn = document.getElementById('retakeBtn');
+    const confirmBtn = document.getElementById('confirmBtn');
+    
+    if (captureBtn) captureBtn.style.display = 'none';
+    if (retakeBtn) retakeBtn.style.display = 'none';
+    if (confirmBtn) confirmBtn.style.display = 'none';
+    
+    // Reset canvas
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    
     // Animazione di transizione
     const welcomePage = document.getElementById('welcomePage');
     welcomePage.classList.add('fade-out');
@@ -89,8 +115,8 @@ async function startCamera() {
         videoStream = await navigator.mediaDevices.getUserMedia({ 
             video: { 
                 facingMode: 'user',
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
+                width: { ideal: 720 },   // Larghezza ridotta per 9:16
+                height: { ideal: 1280 }  // Altezza maggiore per 9:16
             } 
         });
         
@@ -364,6 +390,11 @@ function downloadImage() {
 
 // Ricomincia
 function startOver() {
+    // Ferma la camera se attiva
+    if (videoStream) {
+        stopCamera();
+    }
+    
     // Reset completo dello stato
     state = {
         role: null,
@@ -372,10 +403,36 @@ function startOver() {
         generatedImageUrl: null
     };
     
+    // Reset UI della foto
+    const video = document.getElementById('video');
+    const photoPreview = document.getElementById('photoPreview');
+    const canvas = document.getElementById('canvas');
+    
+    video.style.display = 'block';
+    photoPreview.style.display = 'none';
+    photoPreview.src = '';
+    
+    // Reset bottoni camera
+    document.getElementById('captureBtn').style.display = 'inline-block';
+    document.getElementById('retakeBtn').style.display = 'none';
+    document.getElementById('confirmBtn').style.display = 'none';
+    
+    // Reset canvas
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    
     // Reset selezioni stili
     document.querySelectorAll('.style-btn').forEach(btn => {
         btn.classList.remove('selected');
     });
+    
+    // Reset lista stili selezionati
+    const selectedList = document.getElementById('selectedStylesList');
+    if (selectedList) {
+        selectedList.innerHTML = '<span class="no-selection">Nessuno stile selezionato</span>';
+    }
     
     // Reset email
     document.getElementById('emailInput').value = '';
@@ -385,6 +442,12 @@ function startOver() {
     document.getElementById('videoSection').style.display = 'none';
     document.getElementById('videoStatus').innerHTML = '';
     document.getElementById('videoPlayer').style.display = 'none';
+    
+    // Reset mini preview nella pagina stili
+    const miniPhoto = document.getElementById('miniPhoto');
+    if (miniPhoto) miniPhoto.src = '';
+    
+    console.log('🔄 Reset completo effettuato');
     
     // Torna alla pagina di benvenuto
     changePage('resultPage', 'welcomePage');
@@ -478,4 +541,32 @@ document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeFullscreen();
     }
+});
+
+// Reset automatico all'avvio della pagina
+window.addEventListener('load', function() {
+    // Reset completo dello stato
+    state = {
+        role: null,
+        photoData: null,
+        selectedStyles: [],
+        generatedImageUrl: null
+    };
+    
+    // Assicurati che solo la welcome page sia visibile
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active', 'fade-in', 'fade-out');
+    });
+    document.getElementById('welcomePage').classList.add('active');
+    
+    // Reset selezioni stili
+    document.querySelectorAll('.style-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    // Reset form email
+    const emailInput = document.getElementById('emailInput');
+    if (emailInput) emailInput.value = '';
+    
+    console.log('✨ App inizializzata e pronta per un nuovo utente');
 });

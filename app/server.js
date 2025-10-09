@@ -11,7 +11,7 @@ const OpenAI = require('openai');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3008;
 
 // Configurazione Gemini AI
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -1465,17 +1465,36 @@ app.post('/api/generate-wedding-look', async (req, res) => {
     console.log(`👤 Ruolo: ${role}`);
     console.log(`✨ Stili selezionati: ${styles.join(', ')}`);
     
+    // Assicurati che le cartelle esistano
+    const uploadsDir = path.join(__dirname, 'uploads');
+    const generatedDir = path.join(__dirname, 'generated');
+    
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o777 });
+      console.log('📁 Cartella uploads creata');
+    }
+    
+    if (!fs.existsSync(generatedDir)) {
+      fs.mkdirSync(generatedDir, { recursive: true, mode: 0o777 });
+      console.log('📁 Cartella generated creata');
+    }
+    
     // Salva la foto originale
     const timestamp = Date.now();
     const photoFilename = `wedding-original-${timestamp}.jpg`;
-    const photoPath = path.join(__dirname, 'uploads', photoFilename);
+    const photoPath = path.join(uploadsDir, photoFilename);
     
     // Rimuovi il prefisso data:image e converti base64 in buffer
     const base64Data = photo.replace(/^data:image\/\w+;base64,/, '');
     const photoBuffer = Buffer.from(base64Data, 'base64');
-    fs.writeFileSync(photoPath, photoBuffer);
     
-    console.log('📸 Foto originale salvata:', photoFilename);
+    try {
+      fs.writeFileSync(photoPath, photoBuffer, { mode: 0o666 });
+      console.log('📸 Foto originale salvata:', photoFilename);
+    } catch (writeError) {
+      console.error('❌ Errore scrittura foto:', writeError);
+      throw new Error(`Impossibile salvare la foto: ${writeError.message}`);
+    }
     
     // Crea il prompt ottimizzato
     const genderTerm = role === 'sposo' ? 'groom' : 'bride';
@@ -1487,6 +1506,7 @@ The style should be: ${stylesDescription}.
 The outfit should be highly creative and unique, incorporating elements of ${stylesDescription} style.
 VERY IMPORTANT: Preserve the person's facial features, face shape, and identity EXACTLY as in the original photo.
 The background should be elegant and suitable for a wedding photoshoot.
+IMPORTANT: Generate a vertical/portrait orientation image (9:16 aspect ratio, taller than wide).
 High quality, professional photography, natural lighting, 8k resolution.`;
 
     console.log('📝 Prompt generato:', prompt);
@@ -1537,13 +1557,18 @@ High quality, professional photography, natural lighting, 8k resolution.`;
     
     // Salva l'immagine generata
     const generatedFilename = `wedding-${role}-${timestamp}.jpg`;
-    const generatedPath = path.join(__dirname, 'generated', generatedFilename);
+    const generatedPath = path.join(generatedDir, generatedFilename);
     const generatedBuffer = Buffer.from(generatedImageData, 'base64');
-    fs.writeFileSync(generatedPath, generatedBuffer);
+    
+    try {
+      fs.writeFileSync(generatedPath, generatedBuffer, { mode: 0o666 });
+      console.log('✅ Immagine generata e salvata:', generatedFilename);
+    } catch (writeError) {
+      console.error('❌ Errore scrittura immagine generata:', writeError);
+      throw new Error(`Impossibile salvare l'immagine: ${writeError.message}`);
+    }
     
     generatedImageUrl = `/generated/${generatedFilename}`;
-    
-    console.log('✅ Immagine generata e salvata:', generatedFilename);
     
     const processingTime = Date.now() - startTime;
     console.log(`⏱️ Tempo totale: ${processingTime}ms`);
@@ -1596,6 +1621,11 @@ app.post('/api/send-wedding-email', async (req, res) => {
       });
     }
     
+    // Leggi l'immagine generata e convertila in base64 (per corpo email E allegato)
+    const imagePath = path.join(__dirname, 'generated', imageUrl.split('/').pop());
+    const imageBase64 = fs.readFileSync(imagePath).toString('base64');
+    const imageFilename = `wedding-look-${role}-${Date.now()}.jpg`;
+    
     // Prepara il contenuto dell'email
     const genderTerm = role === 'sposo' ? 'Sposo' : 'Sposa';
     const stylesText = styles.join(', ');
@@ -1609,9 +1639,11 @@ app.post('/api/send-wedding-email', async (req, res) => {
           body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
           .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
           h1 { color: #FF69B4; text-align: center; }
-          .image-container { text-align: center; margin: 20px 0; }
-          img { max-width: 100%; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+          .image-container { text-align: center; margin: 20px 0; background: #f0f0f0; padding: 30px; border-radius: 10px; }
+          .image-placeholder { font-size: 4rem; margin-bottom: 10px; }
+          .image-note { color: #666; font-style: italic; }
           .info { background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; }
+          .message { background: #e8f4ff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #FF69B4; }
           .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
         </style>
       </head>
@@ -1621,7 +1653,8 @@ app.post('/api/send-wedding-email', async (req, res) => {
           <p>Ecco la tua immagine personalizzata generata con l'intelligenza artificiale!</p>
           
           <div class="image-container">
-            <img src="${process.env.BASE_URL || 'http://localhost:3000'}${imageUrl}" alt="Wedding Look">
+            <div class="image-placeholder">📸</div>
+            <p class="image-note">La tua immagine è disponibile in allegato</p>
           </div>
           
           <div class="info">
@@ -1629,33 +1662,54 @@ app.post('/api/send-wedding-email', async (req, res) => {
             👤 Ruolo: ${genderTerm}<br>
             ✨ Stili: ${stylesText}
           </div>
+          </div>
           
-          <p style="text-align: center;">Grazie per aver utilizzato Wedding AI!</p>
+          <div class="message">
+            <p><strong>Grazie di aver interagito con noi nella fiera XYZ!</strong></p>
+            <p>Rimaniamo a disposizione per farti un preventivo per i nostri servizi:</p>
+            <ul>
+              <li>🎵 Audio</li>
+              <li>🎥 Video</li>
+              <li>📸 Foto</li>
+              <li>🤖 AI</li>
+            </ul>
+            <p>Non esitare a contattarci per qualsiasi necessità!</p>
+          </div>
           
           <div class="footer">
             Questa email è stata generata automaticamente da Wedding AI<br>
-            © 2025 Wedding AI - Powered by AI
+            © 2025 OMAI Cloud - Powered by AI
           </div>
         </div>
       </body>
       </html>
     `;
     
-    // Invia email tramite Brevo
+    // Invia email tramite Brevo (imageBase64 e imageFilename già dichiarati sopra)
     const brevoResponse = await axios.post(
       'https://api.brevo.com/v3/smtp/email',
       {
         sender: {
-          name: 'Wedding AI',
-          email: process.env.BREVO_SENDER_EMAIL || 'noreply@weddingai.com'
+          name: 'OMAI Cloud',
+          email: 'info@omai.cloud'
+        },
+        replyTo: {
+          name: 'Mattia Biocchi',
+          email: 'mattia@biocchi.com'
         },
         to: [
           {
             email: email
           }
         ],
-        subject: '🤵👰 Il tuo Wedding Look AI è pronto!',
-        htmlContent: htmlContent
+        subject: '🤵👰 Il Tuo Wedding Look AI - Fiera XYZ',
+        htmlContent: htmlContent,
+        attachment: [
+          {
+            content: imageBase64,
+            name: imageFilename
+          }
+        ]
       },
       {
         headers: {
@@ -1676,9 +1730,17 @@ app.post('/api/send-wedding-email', async (req, res) => {
     
   } catch (error) {
     console.error('❌ Errore invio email:', error.response?.data || error.message);
+    
+    // Messaggio di errore specifico per API key
+    let errorMessage = 'Errore durante l\'invio dell\'email';
+    if (error.response?.data?.code === 'unauthorized') {
+      errorMessage = 'API Key Brevo non valida. Usa una chiave v3 (xkeysib-...) invece di SMTP (xsmtpsib-...)';
+      console.error('💡 Suggerimento: Crea una nuova API Key v3 su https://app.brevo.com/settings/keys/api');
+    }
+    
     res.status(500).json({ 
-      error: 'Errore durante l\'invio dell\'email',
-      details: error.message 
+      error: errorMessage,
+      details: error.response?.data || error.message 
     });
   }
 });

@@ -67,6 +67,12 @@ if [ ! -f .env ]; then
     echo -e "${YELLOW}💡 Crea un file .env con le tue API keys${NC}"
 fi
 
+# Crea e imposta permessi per cartelle uploads e generated
+echo -e "${YELLOW}📁 Configurazione cartelle di lavoro...${NC}"
+mkdir -p uploads generated
+chmod 777 uploads generated
+echo -e "${GREEN}✅ Permessi impostati su uploads/ e generated/${NC}"
+
 # Controlla se il server è già in esecuzione
 SERVER_PID=$(lsof -ti :3000 2>/dev/null || true)
 if [ ! -z "$SERVER_PID" ]; then
